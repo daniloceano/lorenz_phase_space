@@ -1,8 +1,7 @@
 # Lorenz Phase Space Visualization
 
-![LPS_mixed](https://github.com/daniloceano/lorenz_phase_space/assets/56005607/862e0916-4960-4658-b7eb-91f7ad57fe9f)
-
-![LPS_mixed_zoom](https://github.com/daniloceano/lorenz_phase_space/assets/56005607/6c516d59-e534-41b2-82f9-70a3ca77b320)
+<img src="https://github.com/daniloceano/lorenz_phase_space/assets/56005607/862e0916-4960-4658-b7eb-91f7ad57fe9f" width="550">
+<img src="https://github.com/daniloceano/lorenz_phase_space/assets/56005607/6c516d59-e534-41b2-82f9-70a3ca77b320" width="550">
 
 
 ## Overview
