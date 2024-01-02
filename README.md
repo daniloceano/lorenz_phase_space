@@ -49,8 +49,6 @@ To use this tool, ensure you have Python installed along with the required libra
 Import the LorenzPhaseSpace class from LPS.py and initialize it with your data. Here's a basic example:
 
 ```
-python
-Copy code
 from LPS import LorenzPhaseSpace
 import pandas as pd
 
