@@ -4,47 +4,111 @@ jobs:
     docker:
       - image: cimg/python:3.11.0
     steps:
-      - checkout # checkout source code to working directory
+      - checkout 
+
       - run:
-          command: | # create whl and use pipenv to install dependencies
-            python3 setup.py sdist bdist_wheel
-            sudo add-apt-repository universe -y
-            sudo apt-get update
-            sudo apt install -y python3-pip
-            sudo pip install pipenv
-            pipenv install dist/lorenz_phase_space-0.0.1-py3-none-any.whl
-            pipenv install pytest
+          name: Build (build_test)
+          command: python3 setup.py sdist bdist_wheel
+        
       - run:
-          command: | # Run test suite
-            pipenv run pytest
+          name: Add Universe (build_test)
+          command: sudo add-apt-repository universe -y
+
+      - run:
+          name: Update (build_test)
+          command: sudo apt-get update
+
+      - run:
+          name: Install pip (build_test)
+          command: sudo apt install -y python3-pip
+        
+      - run:
+          name: Install pipenv (build_test)
+          command: sudo pip install pipenv
+
+      - run:
+          name: Install package (build_test)
+          command: pipenv install dist/lorenz_phase_space-0.0.1-py3-none-any.whl
+
+      - run:
+          name: Install pytest (build_test)
+          command: pipenv install pytest
+
+      - run:
+          name: Run Tests (build_test)
+          command: pipenv run pytest
+
+      - store_test_results:
+          path: test-reports  
+
   test_pypi_publish:
     docker:
       - image: cimg/python:3.11.0
     steps:
-      - checkout # checkout source code to working directory
+      - checkout
+
       - run:
-          command: | # create whl, install twine and publish to Test PyPI
-            python3 setup.py sdist bdist_wheel
-            sudo add-apt-repository universe -y
-            sudo apt-get update
-            sudo apt install -y python3-pip
-            sudo pip install pipenv
-            pipenv install twine
-            pipenv run twine upload --repository testpypi dist/*
+          name: create whl (test_pypi_publish)
+          command: python3 setup.py sdist bdist_wheel
+
+      - run:
+          name: Add Universe (test_pypi_publish)
+          command: sudo add-apt-repository universe -y
+        
+      - run:
+          name: Update (test_pypi_publish)
+          command: sudo apt-get update
+
+      - run:
+          name: Install pip (test_pypi_publish)
+          command: sudo apt install -y python3-pip
+
+      - run:
+          name: Install pipenv (test_pypi_publish)
+          command: sudo pip install pipenv
+
+      - run:
+          name: Install twine (test_pypi_publish)
+          command: sudo pip install twine
+        
+      - run:
+          name: Publish on TestPyPI
+          command: pipenv run twine upload -u ${TESTPY_LOGIN} -p ${TESTPY_PASSWORD} --repository testpypi dist/* --verbose 
+
   pypi_publish:
     docker:
       - image: cimg/python:3.11.0
     steps:
       - checkout # checkout source code to working directory
+
       - run:
-          command: | # create whl, install twine and publish to PyPI
-            python3 setup.py sdist bdist_wheel
-            sudo add-apt-repository universe -y
-            sudo apt-get update
-            sudo apt install -y python3-pip
-            sudo pip install pipenv
-            pipenv install twine
-            pipenv run twine upload dist/*
+          name: create whl (pypi_publish)
+          command: python3 setup.py sdist bdist_wheel
+
+      - run:
+          name: Add Universe (pypi_publish)
+          command: sudo add-apt-repository universe -y
+        
+      - run:
+          name: Update (pypi_publish)
+          command: sudo apt-get update
+
+      - run:
+          name: Install pip (pypi_publish)
+          command: sudo apt install -y python3-pip
+
+      - run:
+          name: Install pipenv (pypi_publish)
+          command: sudo pip install pipenv
+
+      - run:
+          name: Install twine (pypi_publish)
+          command: sudo pip install twine
+        
+      - run:
+          name: Publish on PyPI
+          command: pipenv run twine upload dist/* --verbose
+            
 workflows:
   build_test_publish:
     jobs:
@@ -62,4 +126,4 @@ workflows:
           filters:
             branches:
               only:
-                - main
+                - master
