@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - **setup.py**: Integrated with README.md
 - **gitignore.py**: included figures generated from testing 
+- **.cicleci/congif.yml**: included variables for CircleCI authentication
 
 ### Added
 
