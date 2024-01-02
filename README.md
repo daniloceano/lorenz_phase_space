@@ -1,7 +1,11 @@
+[![PyPI Downloads](https://pepy.tech/badge/cyclophaser)](https://pepy.tech/project/lorenz-phase-space/)
+[![CircleCI](https://circleci.com/gh/daniloceano/CycloPhaser.svg?style=shield)](https://circleci.com/gh/daniloceano/lorenz-phase-space/)
+
+
 # Lorenz Phase Space Visualization
 
+
 <img src="https://github.com/daniloceano/lorenz_phase_space/assets/56005607/862e0916-4960-4658-b7eb-91f7ad57fe9f" width="550">
-<img src="https://github.com/daniloceano/lorenz_phase_space/assets/56005607/6c516d59-e534-41b2-82f9-70a3ca77b320" width="550">
 
 
 ## Overview
