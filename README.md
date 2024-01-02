@@ -1,4 +1,4 @@
-[![PyPI Downloads](https://pepy.tech/badge/cyclophaser)](https://pepy.tech/project/lorenz-phase-space/)
+[![PyPI Downloads](https://pepy.tech/badge/lorenz-phase-space/)](https://pepy.tech/project/lorenz-phase-space/)
 [![CircleCI](https://circleci.com/gh/daniloceano/CycloPhaser.svg?style=shield)](https://circleci.com/gh/daniloceano/lorenz-phase-space/)
 
 
