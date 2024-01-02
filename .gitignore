@@ -111,3 +111,4 @@ Desktop.ini
 # Custom files
 src/*png
 tests/*png
+*png
