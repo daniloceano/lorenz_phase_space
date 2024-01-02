@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/29 19:39:16 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/01/02 11:01:55 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -353,7 +353,7 @@ class LorenzPhaseSpace:
         return fig, ax
         
 if __name__ == '__main__':
-    sample_file = 'sample_results.csv'
+    sample_file = 'samples/sample_results_1.csv'
     df = pd.read_csv(sample_file, parse_dates={'Datetime': ['Date', 'Hour']}, date_format='%Y-%m-%d %H')
     df = df.drop(['Unnamed: 0'], axis=1)
 
@@ -370,20 +370,20 @@ if __name__ == '__main__':
     # test without zoom
     lps_mixed = LorenzPhaseSpace(x_axis, y_axis, marker_color, marker_size, title=title, datasource=datasource, start=start, end=end)
     fig, ax = lps_mixed.plot()
-    plt.savefig('LPS_mixed.png', dpi=300)
+    plt.savefig('samples/sample_1_LPS_mixed.png', dpi=300)
 
     # test with zoom
     lps_zoom = LorenzPhaseSpace(x_axis, y_axis, marker_color, marker_size, zoom=True, title=title, datasource=datasource, start=start, end=end)
     fig_zoom, ax_zoom = lps_zoom.plot()
-    plt.savefig('LPS_mixed_zoom.png', dpi=300)
+    plt.savefig('samples/sample_1_LPS_mixed_zoom.png', dpi=300)
 
     # test LPS_type
     lps_baroclinic = LorenzPhaseSpace(x_axis, y_axis, marker_color, marker_size, LPS_type='baroclinic', title=title, datasource=datasource, start=start, end=end)
     lps_baroclinic, ax_mixed = lps_baroclinic.plot()
-    plt.savefig('LPS_baroclinic.png', dpi=300)
+    plt.savefig('samples/sample_1_LPS_baroclinic.png', dpi=300)
 
     lps_barotropic = LorenzPhaseSpace(x_axis, y_axis, marker_color, marker_size, LPS_type='barotropic', title=title, datasource=datasource, start=start, end=end)
     lps_barotropic, ax_mixed = lps_barotropic.plot()
-    plt.savefig('LPS_barotropic.png', dpi=300)
+    plt.savefig('samples/sample_1_LPS_barotropic.png', dpi=300)
 
 

@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from .lorenz_phase_space.LPS import LorenzPhaseSpace
+from lorenz_phase_space.LPS import LorenzPhaseSpace
 
 def test_lorenz_phase_space():
-    sample_file = 'sample_results.csv'
+    sample_file = 'samples/sample_results_1.csv'
     df = pd.read_csv(sample_file, parse_dates={'Datetime': ['Date', 'Hour']}, date_format='%Y-%m-%d %H')
     df = df.drop(['Unnamed: 0'], axis=1)
 

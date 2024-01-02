@@ -109,4 +109,5 @@ Desktop.ini
 *~
 
 # Custom files
-*png
+src/*png
+tests/*png
