@@ -107,7 +107,10 @@ jobs:
         
       - run:
           name: Publish on PyPI
-          command: pipenv run twine upload dist/* --verbose
+          command: |
+            export TWINE_USERNAME=__token__
+            export TWINE_PASSWORD=$PYPI_API_TOKEN
+            pipenv run twine upload dist/* --verbose
             
 workflows:
   build_test_publish:
