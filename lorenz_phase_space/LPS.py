@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/01/02 11:01:55 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/01/02 19:18:46 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,7 +15,6 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import cmocean
 import numpy as np
-from bisect import bisect_left
 
 def get_max_min_values(series):
     max_val = series.max()
@@ -43,11 +42,12 @@ class LorenzPhaseSpace:
                 end: pd.Timestamp=False,
                 **kwargs):
         
-        # Data to be plotted
-        self.x_axis = x_axis
-        self.y_axis = y_axis
-        self.marker_color = marker_color
-        self.marker_size = marker_size
+        # Standardize input data
+        self.x_axis = pd.Series(x_axis).reset_index(drop=True)
+        self.y_axis = pd.Series(y_axis).reset_index(drop=True)
+        self.marker_color = pd.Series(marker_color).reset_index(drop=True)
+        self.marker_size = pd.Series(marker_size).reset_index(drop=True)
+
 
         # Plotting options
         self.LPS_type = LPS_type
@@ -355,12 +355,11 @@ class LorenzPhaseSpace:
 if __name__ == '__main__':
     sample_file = 'samples/sample_results_1.csv'
     df = pd.read_csv(sample_file, parse_dates={'Datetime': ['Date', 'Hour']}, date_format='%Y-%m-%d %H')
-    df = df.drop(['Unnamed: 0'], axis=1)
 
-    x_axis = df['Ck']
-    y_axis = df['Ca']
-    marker_color = df['Ge']
-    marker_size = df['Ke']
+    x_axis = df['Ck'].values
+    y_axis = df['Ca'].values
+    marker_color = df['Ge'].values
+    marker_size = df['Ke'].values
 
     title = 'sample'
     datasource = 'sample'

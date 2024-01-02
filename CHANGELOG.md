@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Bug fixes
 
+- Standardized input data as pd.Series for avoinding bugs 
+
+## [0.0.7] - 2024-01-02
+
+### Bug fixes
+
 ## [0.0.6] - 2024-01-02
 
 ### Bug fixes
