@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from .LPS import LorenzPhaseSpace
+from .lorenz_phase_space.LPS import LorenzPhaseSpace
 
 def test_lorenz_phase_space():
     sample_file = 'sample_results.csv'
