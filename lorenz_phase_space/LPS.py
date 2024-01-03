@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/01/02 19:18:46 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/01/02 23:10:50 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -21,10 +21,10 @@ def get_max_min_values(series):
     min_val = series.min()
 
     if max_val < 0:
-        max_val = 0
+        max_val = 1
 
     if min_val > 0:
-        min_val = 0
+        min_val = -1
 
     return max_val, min_val
 
