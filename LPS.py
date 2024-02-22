@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/02/21 18:46:15 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/02/22 17:11:14 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -29,25 +29,7 @@ def get_max_min_values(series):
     return max_val, min_val
 
 class LorenzPhaseSpace:
-    def __init__(self,
-                x_axis: np.ndarray,
-                y_axis: np.ndarray,
-                marker_color: np.ndarray,
-                marker_size: np.ndarray,
-                LPS_type: str='mixed',
-                zoom: bool=False,
-                title: str=False,
-                datasource: str=False,
-                start: pd.Timestamp=False,
-                end: pd.Timestamp=False,
-                **kwargs):
-        
-        # Standardize input data
-        self.x_axis = pd.Series(x_axis).reset_index(drop=True)
-        self.y_axis = pd.Series(y_axis).reset_index(drop=True)
-        self.marker_color = pd.Series(marker_color).reset_index(drop=True)
-        self.marker_size = pd.Series(marker_size).reset_index(drop=True)
-
+    def __init__(self, LPS_type='mixed', zoom=False, title=None, datasource=None, start=None, end=None):
 
         # Plotting options
         self.LPS_type = LPS_type
@@ -58,10 +40,16 @@ class LorenzPhaseSpace:
         self.datasource = datasource
         self.start = start
         self.end = end
-        self.kwargs = kwargs
+        # self.kwargs = kwargs
+
+        # Plot components that can be reused
+        self.fig = None
+        self.ax = None
+        self.cbar = None
 
     @staticmethod
     def calculate_marker_size(term, zoom=False):
+        term = pd.Series(term)
         if zoom:
             # Calculate dynamic intervals based on quantiles if zoom is True
             intervals = list(term.quantile([0.2, 0.4, 0.6, 0.8]))
@@ -81,15 +69,18 @@ class LorenzPhaseSpace:
         sizes = pd.Series([msizes[next(i for i, v in enumerate(intervals) if val <= v)] if val <= intervals[-1] else msizes[-1] for val in term])
         return sizes, intervals
         
-    def set_limits(self, ax):    
-        if not self.zoom:
-            ax.set_xlim(-70, 70)
+    def set_limits(self, x_axis, y_axis):    
+        if self.zoom:
+            self.ax.set_xlim([x_axis.min() - 1, x_axis.max() + 1])
+            self.ax.set_ylim([y_axis.min() - 1, y_axis.max() + 1])
+        else:
+            self.ax.set_xlim(-70, 70)
             y_limits = {
                 'mixed': (-20, 20),
                 'baroclinic': (-20, 20),
                 'barotropic': (-200, 200)
             }
-            ax.set_ylim(*y_limits.get(self.LPS_type, (-20, 20)))
+            self.ax.set_ylim(*y_limits.get(self.LPS_type, (-20, 20)))
 
     def get_labels(self):
         labels_dict = {}
@@ -106,16 +97,16 @@ class LorenzPhaseSpace:
             labels_dict['lower_right'] = 'Eddy is feeding the local atmospheric circulation'
             labels_dict['upper_right'] = 'Baroclinic instability'
 
-            if not self.zoom:
-                labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ck - $W m^{-2})$'
-                labels_dict['y_label'] = 'Conversion from zonal to eddy Potential Energy (Ca - $W m^{-2})$'
-                labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $W m^{-2})$'
-                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n     (Ke - $J m^{-2})$'
-            else:
+            if self.zoom:
                 labels_dict['x_label'] = 'Ck - $W m^{-2})$'
                 labels_dict['y_label'] = 'Ca - $W m^{-2})$'
                 labels_dict['color_label'] = 'Ge - $W m^{-2})$'
                 labels_dict['size_label'] = 'Ke - $J m^{-2})$'
+            else:
+                labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ck - $W m^{-2})$'
+                labels_dict['y_label'] = 'Conversion from zonal to eddy Potential Energy (Ca - $W m^{-2})$'
+                labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $W m^{-2})$'
+                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n (Ke - $J m^{-2})$'
 
         elif self.LPS_type == 'baroclinic':
             labels_dict['y_upper'] = 'Zonal temperature gradient feeds \n eddy potential energy'
@@ -129,16 +120,16 @@ class LorenzPhaseSpace:
             labels_dict['lower_right'] = ''
             labels_dict['upper_right'] = 'Baroclinic instability'
             
-            if self.zoom == False:
-                labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ce - $W m^{-2})$'
-                labels_dict['y_label'] = 'Conversion from zonal to eddy Potential Energy (Ca - $W m^{-2})$'
-                labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $W m^{-2})$'
-                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n     (Ke - $J m^{-2})$'
-            elif self.zoom == True:
+            if self.zoom:
                 labels_dict['x_label'] = 'Ce - $W m^{-2})$'
                 labels_dict['y_label'] = 'Ca - $W m^{-2})$'
                 labels_dict['color_label'] = 'Ge - $W m^{-2})$'
                 labels_dict['size_label'] = 'Ke - $J m^{-2})$'
+            else:
+                labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ce - $W m^{-2})$'
+                labels_dict['y_label'] = 'Conversion from zonal to eddy Potential Energy (Ca - $W m^{-2})$'
+                labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $W m^{-2})$'
+                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n     (Ke - $J m^{-2})$'
 
         elif self.LPS_type == 'barotropic':
             labels_dict['y_upper'] = 'Importation of Kinectic Energy'
@@ -151,17 +142,17 @@ class LorenzPhaseSpace:
             labels_dict['upper_left'] = 'Barotropic instability and \n downstream development'
             labels_dict['lower_right'] = 'Barotropic stability without \n downstream development'
             labels_dict['upper_right'] = 'Barotropic stability and \n downstream development'
-            
-            if self.zoom == False:
-                labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ck - $Wm^{-2})$'
-                labels_dict['y_label'] = ' Kinetic Energy transport across boundaries (BKz - $Wm^{-2})$'
-                labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $Wm^{-2})$'
-                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n     (Ke - $J m^{-2})$'
-            elif self.zoom == True:
+
+            if self.zoom:
                 labels_dict['x_label'] = 'Ck - $W m^{-2})$'
                 labels_dict['y_label'] = 'Bkz - $W m^{-2})$'
                 labels_dict['color_label'] = 'Ge - $W m^{-2})$'
                 labels_dict['size_label'] = 'Ke - $J m^{-2})$'
+            else:
+                labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ck - $Wm^{-2})$'
+                labels_dict['y_label'] = ' Kinetic Energy transport across boundaries (BKz - $Wm^{-2})$'
+                labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $Wm^{-2})$'
+                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n     (Ke - $J m^{-2})$'            
 
         return labels_dict
     
@@ -169,26 +160,6 @@ class LorenzPhaseSpace:
         labelpad = kwargs.get('labelpad', 5) if self.zoom else kwargs.get('labelpad', 38)
         annotation_fontsize = kwargs.get('fontsize', 10)
         label_fontsize = kwargs.get('label_fontsize', 14) if self.zoom else kwargs.get('label_fontsize', 10)
-
-        title = self.title
-        datasource = self.datasource
-        start = self.start
-        end = self.end
-
-        if title and datasource:
-            ax.text(0,1.12,'System: '+title+' - Data from: '+datasource,
-                    fontsize=16,c='#242424',horizontalalignment='left',
-                    transform=ax.transAxes)
-        if start:
-            ax.text(0,1.07,'Start (A):',fontsize=14,c='#242424',
-                    horizontalalignment='left',transform=ax.transAxes)
-            ax.text(0.14,1.07,str(start),fontsize=14,c='#242424',
-                    horizontalalignment='left',transform=ax.transAxes)
-        if end:
-            ax.text(0,1.025,'End (Z):',fontsize=14,c='#242424',
-                    horizontalalignment='left',transform=ax.transAxes)
-            ax.text(0.14,1.025,str(end),fontsize=14,c='#242424',
-                    horizontalalignment='left',transform=ax.transAxes)
         
         labels = self.get_labels()
             
@@ -231,8 +202,31 @@ class LorenzPhaseSpace:
                         verticalalignment='bottom', c='#383838',
                         labelpad=labelpad, y=0.59)
         
+    def make_title(self):
+        title = self.title
+        datasource = self.datasource
+        start = self.start
+        end = self.end
+
+        if title and datasource:
+            self.ax.text(0,1.12,'System: '+title+' - Data from: '+datasource,
+                    fontsize=16,c='#242424',horizontalalignment='left',
+                    transform=self.ax.transAxes)
+
+        if start:
+            self.ax.text(0,1.07,'Start (A):',fontsize=14,c='#242424',
+                    horizontalalignment='left',transform=self.ax.transAxes)
+            self.ax.text(0.14,1.07,str(start),fontsize=14,c='#242424',
+                    horizontalalignment='left',transform=self.ax.transAxes)
+            
+        if end:
+            self.ax.text(0,1.025,'End (Z):',fontsize=14,c='#242424',
+                    horizontalalignment='left',transform=self.ax.transAxes)
+            self.ax.text(0.14,1.025,str(end),fontsize=14,c='#242424',
+                    horizontalalignment='left',transform=self.ax.transAxes)
+        
     @staticmethod
-    def plot_legend(ax, intervals, msizes):
+    def plot_legend(ax, intervals, msizes, title_label):
         labels = ['< ' + str(intervals[0]),
                   '< ' + str(intervals[1]),
                   '< ' + str(intervals[2]),
@@ -243,116 +237,176 @@ class LorenzPhaseSpace:
         for i in range(len(msizes)):
             ax.scatter([], [], c='#383838', s=msizes[i], label=labels[i])
 
-        ax.legend(title='Eddy Kinetic Energy \n      (Ke - $Jm^{-2}$)',
-                  fontsize=10, loc='lower left', bbox_to_anchor=(0.97, 0, 0.5, 1),
+        ax.legend(title=title_label, title_fontsize=12,
+                  fontsize=10, loc='lower left', bbox_to_anchor=(1, 0, 0.5, 1),
                   labelcolor='#383838', frameon=False, handlelength=0.3, handleheight=4,
                   borderpad=1.5, scatteryoffsets=[0.1], framealpha=1,
                   handletextpad=1.5, scatterpoints=1)
         
-    def plot_lines(self, ax, **kwargs):
-        alpha = kwargs.get('alpha', 0.2)
+    def plot_lines(self, limits, **kwargs):
+        # Configure properties from kwargs        
+        alpha = kwargs.get('line_alpha', 0.2)
         linewidth = kwargs.get('lw', 20)
         color = kwargs.get('c', '#383838')
 
-        ax.axhline(y=0,linewidth=linewidth, c=color, alpha=alpha,zorder=1)
-        ax.axvline(x=0,linewidth=linewidth, c=color, alpha=alpha,zorder=1)
+        self.ax.axhline(y=0,linewidth=linewidth, c=color, alpha=alpha,zorder=1)
+        self.ax.axvline(x=0,linewidth=linewidth, c=color, alpha=alpha,zorder=1)
 
         # Vertical lines for mixed LPS
         if self.LPS_type == 'mixed':
-            min_x = int(round(ax.get_xlim()[0],-1)+5)
-            max_y = int(round(ax.get_ylim()[1],-1)-5)
-            if abs(min_x) > abs(max_y):
-                max_y = -min_x
-            else:
-                min_x = -max_y
-            ax.plot(range(0, min_x,-1),range(0, max_y, 1), linewidth=linewidth / 3,
-                    c=color, alpha=alpha, zorder=1)
-                
-    def plot_gradient_lines(self, ax):
-        LPS_type = self.LPS_type
-        lw, c = 0.5, '#383838'
-        num_lines = 20
-        x_ticks = ax.get_xticks()
-        y_ticks = ax.get_yticks()
+            # Get the end points of the plot
+            end_point_x = limits[0] * 2
+            end_point_y = limits[3] * 2
 
+            # Generate points for the line
+            x_points = np.linspace(0, end_point_x, 100)
+            y_points = np.linspace(0, end_point_y, 100)
+
+            self.ax.plot(x_points, y_points, linewidth=linewidth, c=color, alpha=alpha, zorder=2) 
+                
+    def plot_gradient_lines(self, **kwargs):
+        # Configure properties from kwargs
+        LPS_type = self.LPS_type
+        linewidth = kwargs.get('lw', 0.5)
+        color = kwargs.get('c', '#383838')
+        num_lines = 20
+
+        # Get ticks
+        x_ticks = self.ax.get_xticks()
+        y_ticks = self.ax.get_yticks()
+
+        # Get offsets
         x_previous0 = x_ticks[int((len(x_ticks))/2)-1] * 0.17
         y_previous0 = y_ticks[int((len(y_ticks))/2)-1] * 0.17
-
         x_offsets = np.linspace(x_previous0, 0, num_lines)
         y_offsets = np.linspace(y_previous0, 0, num_lines)
 
         alpha_values = np.linspace(0, 0.6, num_lines)
 
         for i, alpha in enumerate(alpha_values):
-            ax.axhline(y=0 + y_offsets[i], linewidth=lw, alpha=alpha, c=c)
-            ax.axhline(y=0 - y_offsets[i], linewidth=lw, alpha=alpha, c=c)
-            ax.axvline(x=0 + x_offsets[i], linewidth=lw, alpha=alpha, c=c)
-            ax.axvline(x=0 - x_offsets[i], linewidth=lw, alpha=alpha, c=c)
+            self.ax.axhline(y=0 + y_offsets[i], linewidth=linewidth, alpha=alpha, c=color)
+            self.ax.axhline(y=0 - y_offsets[i], linewidth=linewidth, alpha=alpha, c=color)
+            self.ax.axvline(x=0 + x_offsets[i], linewidth=linewidth, alpha=alpha, c=color)
+            self.ax.axvline(x=0 - x_offsets[i], linewidth=linewidth, alpha=alpha, c=color)
 
         # Diagonal line
         if LPS_type == 'mixed':
             y_ticks = -x_ticks
             for i, alpha in enumerate(alpha_values):
                 x, y = x_offsets[i], y_offsets[i]
-                ax.plot([x, -x_ticks[-1] + x], [y, -y_ticks[-1] + y], linewidth=lw, alpha=alpha, c=c)
-                ax.plot([-x, -x_ticks[-1] - x], [-y, -y_ticks[-1] - y], linewidth=lw, alpha=alpha, c=c)
+                self.ax.plot([x, -x_ticks[-1] + x], [y, -y_ticks[-1] + y], linewidth=linewidth,
+                             alpha=alpha, c=color)
+                self.ax.plot([-x, -x_ticks[-1] - x], [-y, -y_ticks[-1] - y], linewidth=linewidth,
+                             alpha=alpha, c=color)
     
-    def plot(self):
-        # Logic for plotting
+    def create_lps_plot(self, **kwargs):
         plt.close('all')
-        fig = plt.figure(figsize=(10, 10))
-        ax = plt.gca()
+        self.fig, self.ax = plt.subplots(figsize=(12, 10))
+        self.set_limits(x_axis, y_axis)
 
-        self.set_limits(ax)
+        labels = self.get_labels()
 
+        # Colorbar setup
         if self.zoom:
-            max_colors, min_colors = get_max_min_values(self.marker_color)
-            norm = colors.TwoSlopeNorm(vmin=min_colors, vcenter=0, vmax=max_colors)
             extend = 'neither'
+            norm = colors.Normalize(vmin=-1, vmax=1)  # Placeholder, adjust based on your data
         else:
             extend = 'both'
             norm = colors.TwoSlopeNorm(vmin=-30, vcenter=0, vmax=30)
 
-        # arrows connecting dots
-        ax.quiver(self.x_axis[:-1], self.y_axis[:-1],
-                (self.x_axis[1:].values - self.x_axis[:-1].values) * .97,
-                (self.y_axis[1:].values - self.y_axis[:-1].values) * .97,
-                angles='xy', scale_units='xy', scale=1, color='k')
+        sm = plt.cm.ScalarMappable(cmap=cmocean.cm.curl, norm=norm)
+        sm.set_array([])
+        cax = self.ax.inset_axes([self.ax.get_position().x1 + 0.13, self.ax.get_position().y0 + 0.35, 0.02, self.ax.get_position().height / 1.5])
+        self.cbar = self.fig.colorbar(sm, extend=extend, cax=cax)
+        self.cbar.ax.set_ylabel(labels['color_label'], rotation=270, labelpad=25)  # Customize this
+        for t in self.cbar.ax.get_yticklabels():
+            t.set_fontsize(10)
+
+        self.annotate_plot(self.ax, self.cbar)
+        self.plot_gradient_lines(**kwargs) if not self.zoom else []
+
+        plt.subplots_adjust(right=0.8)
+
+        return self.fig, self.ax
+    
+    def plot_data(self, x_axis, y_axis, marker_color, marker_size, **kwargs):
+        if self.fig is None or self.ax is None:
+            print("Plot structure not initialized. Call create_lps_plot first.")
+            return
         
+        # Standardize input data as pandas Series
+        x_axis = pd.Series(x_axis).reset_index(drop=True)
+        y_axis = pd.Series(y_axis).reset_index(drop=True)
+        marker_color = pd.Series(marker_color).reset_index(drop=True)
+        marker_size = pd.Series(marker_size).reset_index(drop=True)
+
+        # Make title
+        self.make_title()
+    
+        # Get labels
+        labels = self.get_labels()
+
+        # Normalize marker colors based on whether zoom is enabled or not
+        if self.zoom:
+            limits = kwargs.get('limits', [x_axis.min(), x_axis.max(), y_axis.min(), y_axis.max()])
+            self.plot_lines(limits, **kwargs)
+            max_colors, min_colors = get_max_min_values(marker_color)
+            norm = colors.Normalize(vmin=min_colors, vmax=max_colors)
+            extend = 'both'
+            alpha = 0.75
+
+        else:
+            norm = colors.TwoSlopeNorm(vmin=-30, vcenter=0, vmax=30)
+            extend = 'neither'
+            alpha = 1.0
+
+        # arrows connecting dots
+        self.ax.quiver(x_axis[:-1].values, y_axis[:-1].values,
+                        (x_axis[1:].values - x_axis[:-1].values) * .9,
+                        (y_axis[1:].values - y_axis[:-1].values) * .9,
+                        angles='xy', scale_units='xy', scale=1, color='k')
+
         # Compute marker sizes and intervals
-        sizes, intervals = self.calculate_marker_size(self.marker_size, self.zoom)
+        sizes, intervals = self.calculate_marker_size(marker_size, self.zoom)
         msizes = [200, 400, 600, 800, 1000]
 
         # Add legend with dynamic intervals and sizes
-        self.plot_legend(ax, intervals, msizes)
+        self.plot_legend(self.ax, intervals, msizes, labels['size_label'])
 
         # plot the moment of maximum intensity
-        ax.scatter(self.x_axis.loc[sizes.idxmax()], self.y_axis.loc[sizes.idxmax()],
-                c='None', s=sizes.loc[sizes.idxmax()] * 1.1, zorder=100, edgecolors='k', linewidth=3)
+        extreme = marker_size.idxmax()
+        self.ax.scatter(x_axis.loc[extreme], y_axis.loc[extreme],
+                c='None', s=sizes.loc[extreme] * 1.1, zorder=201, edgecolors='k', linewidth=3)
 
-        dots = ax.scatter(self.x_axis, self.y_axis, c=self.marker_color, cmap=cmocean.cm.curl,
-                        s=sizes, zorder=100, edgecolors='grey', norm=norm)
+        # Plot the data
+        cmap = kwargs.get('cmap', cmocean.cm.curl)
+        scatter = self.ax.scatter(x_axis, y_axis, c=marker_color, cmap=cmap, zorder=200,
+                                  norm=norm, s=sizes, edgecolors='k', alpha=alpha)
+        
+        # Adjust plot limits
+        self.set_limits(x_axis, y_axis)
         
         # Marking start and end of the system
-        ax.text(self.x_axis[0], self.y_axis[0], 'A', zorder=101, fontsize=22, 
+        self.ax.text(x_axis[0], y_axis[0], 'A', zorder=201, fontsize=25,
                 horizontalalignment='center', verticalalignment='center')
-        ax.text(self.x_axis.iloc[-1], self.y_axis.iloc[-1], 'Z', zorder=101, fontsize=22,
+        self.ax.text(x_axis.iloc[-1], y_axis.iloc[-1], 'Z', zorder=201, fontsize=25,
                 horizontalalignment='center', verticalalignment='center')
 
-        # Colorbar
-        cax = ax.inset_axes([ax.get_position().x1 + 0.12, ax.get_position().y0 + 0.35, 0.02, ax.get_position().height / 1.5])
-        cbar = plt.colorbar(dots, extend=extend, cax=cax)
+        # Update the colorbar to match the new data
+        self.cbar.remove()  # Remove the old colorbar
+        
+        # Add colorbar
+        cax = self.ax.inset_axes([self.ax.get_position().x1 + 0.23, self.ax.get_position().y0 + 0.35, 0.02, self.ax.get_position().height / 1.5])
+        cbar = plt.colorbar(scatter, extend=extend, cax=cax)
         for t in cbar.ax.get_yticklabels():
             t.set_fontsize(10)
+        self.cbar.ax.set_ylabel(labels['color_label'], rotation=270, labelpad=25)
 
-        self.annotate_plot(ax, cbar)
-        self.plot_lines(ax) if self.zoom else self.plot_gradient_lines(ax)
-
-        plt.subplots_adjust(right=0.84, bottom=0.1)
-
-        return fig, ax
+        return self.fig, self.ax
         
 if __name__ == '__main__':
+    import random
+
     sample_file = 'samples/sample_results_1.csv'
     df = pd.read_csv(sample_file, parse_dates={'Datetime': ['Date', 'Hour']}, date_format='%Y-%m-%d %H')
 
@@ -361,28 +415,54 @@ if __name__ == '__main__':
     marker_color = df['Ge'].values
     marker_size = df['Ke'].values
 
-    title = 'sample'
-    datasource = 'sample'
+    title = 'sample1'
+    datasource = 'ERA5'
     start = pd.to_datetime(df['Datetime'].iloc[0]).strftime('%Y-%m-%d %H:%M')
     end = pd.to_datetime(df['Datetime'].iloc[-1]).strftime('%Y-%m-%d %H:%M')
 
-    # test without zoom
-    lps_mixed = LorenzPhaseSpace(x_axis, y_axis, marker_color, marker_size, title=title, datasource=datasource, start=start, end=end)
-    fig, ax = lps_mixed.plot()
-    plt.savefig('samples/sample_1_LPS_mixed.png', dpi=300)
+    # Test base plot
+    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
+    lps.create_lps_plot()
+    fname = 'samples/lps_example'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
 
-    # test with zoom
-    lps_zoom = LorenzPhaseSpace(x_axis, y_axis, marker_color, marker_size, zoom=True, title=title, datasource=datasource, start=start, end=end)
-    fig_zoom, ax_zoom = lps_zoom.plot()
-    plt.savefig('samples/sample_1_LPS_mixed_zoom.png', dpi=300)
+    # Test without zoom
+    lps = LorenzPhaseSpace(title=title, datasource=datasource, start=start, end=end, LPS_type='mixed', zoom=False)
+    lps.create_lps_plot()
+    lps.plot_data(x_axis, y_axis, marker_color, marker_size)
+    fname = 'samples/sample_1_LPS_mixed'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
 
-    # test LPS_type
-    lps_baroclinic = LorenzPhaseSpace(x_axis, y_axis, marker_color, marker_size, LPS_type='baroclinic', title=title, datasource=datasource, start=start, end=end)
-    lps_baroclinic, ax_mixed = lps_baroclinic.plot()
-    plt.savefig('samples/sample_1_LPS_baroclinic.png', dpi=300)
+    # Test with zoom
+    lps = LorenzPhaseSpace(title=title, datasource=datasource, start=start, end=end, LPS_type='mixed', zoom=True)
+    lps.create_lps_plot()
+    lps.plot_data(x_axis, y_axis, marker_color, marker_size)
+    fname = 'samples/sample_1_LPS_mixed_zoom'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
 
-    lps_barotropic = LorenzPhaseSpace(x_axis, y_axis, marker_color, marker_size, LPS_type='barotropic', title=title, datasource=datasource, start=start, end=end)
-    lps_barotropic, ax_mixed = lps_barotropic.plot()
-    plt.savefig('samples/sample_1_LPS_barotropic.png', dpi=300)
+    # Test zoom with very high values
+    n = len(df)  # Number of elements in each column
+    random_factors_Ck = np.random.randint(1, 11, size=n)
+    random_factors_Ca = np.random.randint(1, 11, size=n)
+    random_factors_Ge = np.random.randint(1, 11, size=n)
+    random_factors_Ke = np.random.randint(1, 11, size=n)
+
+    # Element-wise multiplication
+    x_axis_rdm = (df['Ck'] * random_factors_Ck).values
+    y_axis_rdm = (df['Ca'] * random_factors_Ca).values
+    marker_color_rdm = (df['Ge'] * random_factors_Ge).values
+    marker_size_rdm = (df['Ke'] * random_factors_Ke).values
+
+    lps = LorenzPhaseSpace(title=title, datasource=datasource, start=start, end=end, LPS_type='mixed', zoom=True)
+    lps.create_lps_plot()
+    lps.plot_data(x_axis_rdm, y_axis_rdm, marker_color_rdm, marker_size_rdm)
+    fname = 'samples/sample_1_LPS_mixed_zoom_rdm'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+
 
 
