@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/02/22 17:11:14 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/02/22 17:34:10 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -69,8 +69,8 @@ class LorenzPhaseSpace:
         sizes = pd.Series([msizes[next(i for i, v in enumerate(intervals) if val <= v)] if val <= intervals[-1] else msizes[-1] for val in term])
         return sizes, intervals
         
-    def set_limits(self, x_axis, y_axis):    
-        if self.zoom:
+    def set_limits(self, x_axis=None, y_axis=None):    
+        if self.zoom and x_axis is not None and y_axis is not None:
             self.ax.set_xlim([x_axis.min() - 1, x_axis.max() + 1])
             self.ax.set_ylim([y_axis.min() - 1, y_axis.max() + 1])
         else:
@@ -299,10 +299,13 @@ class LorenzPhaseSpace:
                 self.ax.plot([-x, -x_ticks[-1] - x], [-y, -y_ticks[-1] - y], linewidth=linewidth,
                              alpha=alpha, c=color)
     
-    def create_lps_plot(self, **kwargs):
+    def create_lps_plot(self, x_axis=None, y_axis=None, **kwargs):
         plt.close('all')
         self.fig, self.ax = plt.subplots(figsize=(12, 10))
-        self.set_limits(x_axis, y_axis)
+        if x_axis is not None and y_axis is not None:
+            self.set_limits(x_axis, y_axis)  # This should also be adjusted to handle None values gracefully
+        else:
+            self.set_limits()
 
         labels = self.get_labels()
 
