@@ -75,7 +75,7 @@ jobs:
           name: Publish on TestPyPI
           command: |
             export TWINE_USERNAME=__token__
-            export TWINE_PASSWORD=$TESTPY_PASSWORD
+            export TWINE_PASSWORD=$TESTPY_TOKEN
             pipenv run twine upload --repository testpypi dist/* --verbose 
 
   pypi_publish:
