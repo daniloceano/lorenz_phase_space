@@ -55,17 +55,24 @@ import pandas as pd
 # Load your data
 data = pd.read_csv('your_data.csv')
 
-# Initialize the Lorenz Phase Space plotter
+# Initialize the Lorenz Phase Space plotter without directly passing the data
 lps = LorenzPhaseSpace(
+    LPS_type='mixed',  # Choose from 'mixed', 'baroclinic', 'barotropic'
+    zoom=True  # Enable zoom for detailed analysis
+)
+
+# Prepare the plot environment
+lps.create_lps_plot()
+
+# Plot your data
+lps.plot_data(
     x_axis=data['Ck'],
     y_axis=data['Ca'],
     marker_color=data['Ge'],
-    marker_size=data['Ke'],
-    LPS_type='mixed'  # Choose from 'mixed', 'baroclinic', 'barotropic'
+    marker_size=data['Ke']
 )
 
-# Plot and save the visualization
-fig, ax = lps.plot()
+# Save the visualization
 plt.savefig('LPS_visualization.png', dpi=300)
 ```
 
