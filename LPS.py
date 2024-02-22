@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/02/22 17:34:10 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/02/22 18:29:24 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -374,6 +374,8 @@ class LorenzPhaseSpace:
         msizes = [200, 400, 600, 800, 1000]
 
         # Add legend with dynamic intervals and sizes
+        if hasattr(self.ax, 'legend_') and self.ax.legend_:
+            self.ax.legend_.remove()
         self.plot_legend(self.ax, intervals, msizes, labels['size_label'])
 
         # plot the moment of maximum intensity
@@ -395,8 +397,12 @@ class LorenzPhaseSpace:
         self.ax.text(x_axis.iloc[-1], y_axis.iloc[-1], 'Z', zorder=201, fontsize=25,
                 horizontalalignment='center', verticalalignment='center')
 
-        # Update the colorbar to match the new data
-        self.cbar.remove()  # Remove the old colorbar
+        # Before updating the colorbar, safely attempt to remove the existing one if it exists
+        if hasattr(self, 'cbar') and self.cbar:
+            try:
+                self.cbar.remove()
+            except (ValueError, AttributeError):
+                pass  # If removing the colorbar fails, simply pass and proceed to create a new one
         
         # Add colorbar
         cax = self.ax.inset_axes([self.ax.get_position().x1 + 0.23, self.ax.get_position().y0 + 0.35, 0.02, self.ax.get_position().height / 1.5])
@@ -446,7 +452,7 @@ if __name__ == '__main__':
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
-    # Test zoom with very high values
+    # Test zoom with random values
     n = len(df)  # Number of elements in each column
     random_factors_Ck = np.random.randint(1, 11, size=n)
     random_factors_Ca = np.random.randint(1, 11, size=n)
@@ -466,6 +472,23 @@ if __name__ == '__main__':
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
+    # Test with multiple plots - with zoom
+    lps = LorenzPhaseSpace(title=title, datasource=datasource, start=start, end=end, LPS_type='mixed', zoom=True)
+    lps.create_lps_plot()
+    lps.plot_data(x_axis, y_axis, marker_color, marker_size)
+    lps.plot_data(x_axis_rdm, y_axis_rdm, marker_color_rdm, marker_size_rdm)
+    fname = 'samples/sample_1_LPS_mixed_zoom_multiple'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+    # Test with multiple plots - without zoom
+    lps = LorenzPhaseSpace(title=title, datasource=datasource, start=start, end=end, LPS_type='mixed', zoom=False)
+    lps.create_lps_plot()
+    lps.plot_data(x_axis, y_axis, marker_color, marker_size)
+    lps.plot_data(x_axis_rdm, y_axis_rdm, marker_color_rdm, marker_size_rdm)
+    fname = 'samples/sample_1_LPS_mixed_multiple'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
 
 
 
