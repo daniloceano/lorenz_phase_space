@@ -46,23 +46,20 @@ To use this tool, ensure you have Python installed along with the required libra
 
 ## Usage
 
-Import the LorenzPhaseSpace class from LPS.py and initialize it with your data. Here's a basic example:
+# Simple Example with Zoom Disabled
+
+This example demonstrates using the Lorenz Phase Space visualization tool for a single dataset.
 
 ```
 from LPS import LorenzPhaseSpace
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Load your data
 data = pd.read_csv('your_data.csv')
 
-# Initialize the Lorenz Phase Space plotter without directly passing the data
-lps = LorenzPhaseSpace(
-    LPS_type='mixed',  # Choose from 'mixed', 'baroclinic', 'barotropic'
-    zoom=True  # Enable zoom for detailed analysis
-)
-
-# Prepare the plot environment
-lps.create_lps_plot()
+# Initialize the Lorenz Phase Space plotter without zoom
+lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
 
 # Plot your data
 lps.plot_data(
@@ -73,9 +70,90 @@ lps.plot_data(
 )
 
 # Save the visualization
-plt.savefig('LPS_visualization.png', dpi=300)
+fname = 'samples/sample_1_LPS_mixed'
+plt.savefig(f"{fname}.png", dpi=300)
+print(f"Saved {fname}.png")
 ```
 
+# Using Two Datasets with Zoom Enabled
+
+This example shows how to plot data from two datasets with zoom enabled for detailed analysis.
+
+```
+from LPS import LorenzPhaseSpace
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load your datasets
+data1 = pd.read_csv('dataset1.csv')
+data2 = pd.read_csv('dataset2.csv')
+
+# Initialize the Lorenz Phase Space plotter with zoom
+lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+
+# Plot data from the first dataset
+lps.plot_data(
+    x_axis=data1['Ck'],
+    y_axis=data1['Ca'],
+    marker_color=data1['Ge'],
+    marker_size=data1['Ke']
+)
+
+# Plot data from the second dataset
+lps.plot_data(
+    x_axis=data2['Ck'],
+    y_axis=data2['Ca'],
+    marker_color=data2['Ge'],
+    marker_size=data2['Ke']
+)
+
+# Save the visualization
+fname = 'samples/sample_1_LPS_mixed_zoom_multiple'
+plt.savefig(f"{fname}.png", dpi=300)
+print(f"Saved {fname}.png")
+```
+
+# Using Multiple Datasets with Dynamically Updating Limits
+
+This example demonstrates dynamically updating plot limits based on multiple datasets for enhanced visualization with zoom enabled.
+
+```
+from LPS import LorenzPhaseSpace
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load your datasets
+data1 = pd.read_csv('dataset1.csv')
+data2 = pd.read_csv('dataset2.csv')
+
+# Dynamically determine plot limits
+x_min, x_max = np.min([data1['Ck'].min(), data2['Ck'].min()]), np.max([data1['Ck'].max(), data2['Ck'].max()])
+y_min, y_max = np.min([data1['Ca'].min(), data2['Ca'].min()]), np.max([data1['Ca'].max(), data2['Ca'].max()])
+color_min, color_max = np.min([data1['Ge'].min(), data2['Ge'].min()]), np.max([data1['Ge'].max(), data2['Ge'].max()])
+size_min, size_max = np.min([data1['Ke'].min(), data2['Ke'].min()]), np.max([data1['Ke'].max(), data2['Ke'].max()])
+
+# Initialize Lorenz Phase Space with dynamic limits
+lps = LorenzPhaseSpace(
+    LPS_type='mixed',
+    zoom=True,
+    x_limits=[x_min, x_max],
+    y_limits=[y_min, y_max],
+    color_limits=[color_min, color_max],
+    marker_limits=[size_min, size_max]
+)
+
+# Plot data from both datasets
+lps.plot_data(x_axis=data1['Ck'], y_axis=data1['Ca'], marker_color=data1['Ge'], marker_size=data1['Ke'])
+lps.plot_data(x_axis=data2['Ck'], y_axis=data2['Ca'], marker_color=data2['Ge'], marker_size=data2['Ke'])
+
+# Save the visualization
+fname = 'samples/sample_1_LPS_mixed_zoom_multiple_dynamic'
+plt.savefig(f"{fname}.png", dpi=300)
+print(f"Saved {fname}.png")
+```
+
+These examples cover a range of scenarios from simple usage to more complex visualizations involving multiple datasets and dynamic adjustment of plot limits, showcasing the flexibility of the Lorenz Phase Space visualization tool.
 
 ## Contributing
 

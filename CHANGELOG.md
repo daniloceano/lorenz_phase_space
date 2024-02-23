@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.0] - 2024-02-23
+
+### Added
+- Dynamic zoom functionality in `LorenzPhaseSpace` class, allowing users to dynamically adjust plot limits based on the dataset's range.
+- The ability to pass custom limits for x-axis, y-axis, color, and marker size during class initialization and plotting to enable more flexible visualizations.
+- Enhanced error handling for colorbar and legend creation to prevent duplication when plotting multiple datasets.
+
+### Changed
+- Modified `LorenzPhaseSpace` class initialization to support new parameters for dynamic limits and zoom functionality, offering improved flexibility for users.
+- Updated plot_data method to incorporate dynamic zoom and limit adjustments, ensuring that the visualizations accurately reflect the data being plotted.
+- Improved test suite to cover new functionalities and ensure the reliability of dynamic limit adjustments and zoom features.
+
+### Fixed
+- Issue where multiple colorbars and legends were created when plotting multiple datasets, now ensuring only the latest colorbar and legend are displayed.
+
+### Optimization
+- Enhanced the efficiency of plotting large datasets by optimizing colorbar and legend updates to avoid unnecessary recalculations.
+
+
 ## [1.0.1] - 2024-02-22
 
 ### Changed
