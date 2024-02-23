@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/02/22 17:34:10 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/02/23 19:41:47 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,8 +17,8 @@ import cmocean
 import numpy as np
 
 def get_max_min_values(series):
-    max_val = series.max()
-    min_val = series.min()
+    max_val = np.amax(series)
+    min_val = np.amin(series)
 
     if max_val < 0:
         max_val = 1
@@ -29,23 +29,104 @@ def get_max_min_values(series):
     return max_val, min_val
 
 class LorenzPhaseSpace:
-    def __init__(self, LPS_type='mixed', zoom=False, title=None, datasource=None, start=None, end=None):
+    def __init__(self, LPS_type='mixed', zoom=False,
+                 x_limits=None, y_limits=None, 
+                 color_limits=None, marker_limits=None,
+                 **kwargs):
+        
+        # Set up figure
+        plt.close('all')
+        self.fig, self.ax = plt.subplots(figsize=(12, 10))
 
         # Plotting options
         self.LPS_type = LPS_type
         self.zoom = zoom
 
-        # Optional attributes
-        self.title = title
-        self.datasource = datasource
-        self.start = start
-        self.end = end
-        # self.kwargs = kwargs
+        # Fix not zoomed plot to be always fixed limits
+        if self.zoom == False:
+            x_limits, y_limits = None, None
+            color_limits, marker_limits = None, None
 
-        # Plot components that can be reused
-        self.fig = None
-        self.ax = None
-        self.cbar = None
+        # Set limits
+        limits = self.set_limits(x_limits, y_limits)
+        color_limits = np.linspace(-15, 15, 100) if color_limits is None else color_limits
+        marker_size = np.linspace(2.5e5, 7e5, 100) if marker_limits is None else np.linspace(marker_limits[0], marker_limits[1], 100)
+
+        # Get labels
+        labels = self.get_labels()
+
+        # Normalize marker colors based on whether zoom is enabled or not
+        if self.zoom:
+            self.plot_lines(limits, **kwargs)
+            max_colors, min_colors = get_max_min_values([color_limits[0], color_limits[-1]])
+            self.norm = colors.Normalize(vmin=min_colors, vmax=max_colors)
+            extend = 'both'
+
+        else:
+            self.norm = colors.TwoSlopeNorm(vmin=-30, vcenter=0, vmax=30)
+            extend = 'neither'
+
+        # Compute marker sizes and intervals
+        _, intervals = self.calculate_marker_size(marker_size, self.zoom)
+        msizes = [200, 400, 600, 800, 1000]
+
+        # Add legend with dynamic intervals and sizes
+        self.plot_legend(self.ax, intervals, msizes, labels['size_label'])
+
+        # Add colorbar
+        sm = plt.cm.ScalarMappable(cmap=cmocean.cm.curl, norm=self.norm)
+        sm.set_array([])
+        cax = self.ax.inset_axes([self.ax.get_position().x1 + 0.13, self.ax.get_position().y0 + 0.35, 0.02, self.ax.get_position().height / 1.5])
+        self.cbar = self.fig.colorbar(sm, extend=extend, cax=cax)
+        self.cbar.ax.set_ylabel(labels['color_label'], rotation=270, labelpad=25)  # Customize this
+        for t in self.cbar.ax.get_yticklabels():
+            t.set_fontsize(10)
+
+        # Add annotations
+        self.annotate_plot(self.ax, self.cbar)
+        self.plot_gradient_lines(**kwargs) if not self.zoom else []
+
+        plt.subplots_adjust(right=0.8)
+
+    def plot_data(self, x_axis, y_axis, marker_color, marker_size, **kwargs):
+        if self.fig is None or self.ax is None:
+            print("Plot structure not initialized. Call create_lps_plot first.")
+            return
+        
+        # Standardize input data as pandas Series
+        x_axis = pd.Series(x_axis).reset_index(drop=True)
+        y_axis = pd.Series(y_axis).reset_index(drop=True)
+        marker_color = pd.Series(marker_color).reset_index(drop=True)
+        marker_size = pd.Series(marker_size).reset_index(drop=True)
+
+        # arrows connecting dots
+        self.ax.quiver(x_axis[:-1].values, y_axis[:-1].values,
+                        (x_axis[1:].values - x_axis[:-1].values) * .9,
+                        (y_axis[1:].values - y_axis[:-1].values) * .9,
+                        angles='xy', scale_units='xy', scale=1, color='k')
+
+        # Compute marker sizes and intervals
+        sizes, intervals = self.calculate_marker_size(marker_size, self.zoom)
+        msizes = [200, 400, 600, 800, 1000]
+
+        # plot the moment of maximum intensity
+        extreme = marker_size.idxmax()
+        self.ax.scatter(x_axis.loc[extreme], y_axis.loc[extreme],
+                c='None', s=sizes.loc[extreme] * 1.1, zorder=201, edgecolors='k', linewidth=3)
+
+        # Plot the data
+        alpha = kwargs.get('alpha', 1)
+        cmap = kwargs.get('cmap', cmocean.cm.curl)
+        scatter = self.ax.scatter(x_axis, y_axis, c=marker_color, cmap=cmap, zorder=200,
+                                  norm=self.norm, s=sizes, edgecolors='k', alpha=alpha)
+        
+        # Marking start and end of the system
+        self.ax.text(x_axis[0], y_axis[0], 'A', zorder=201, fontsize=25,
+                horizontalalignment='center', verticalalignment='center')
+        self.ax.text(x_axis.iloc[-1], y_axis.iloc[-1], 'Z', zorder=201, fontsize=25,
+                horizontalalignment='center', verticalalignment='center')
+
+        return self.fig, self.ax
 
     @staticmethod
     def calculate_marker_size(term, zoom=False):
@@ -69,18 +150,24 @@ class LorenzPhaseSpace:
         sizes = pd.Series([msizes[next(i for i, v in enumerate(intervals) if val <= v)] if val <= intervals[-1] else msizes[-1] for val in term])
         return sizes, intervals
         
-    def set_limits(self, x_axis=None, y_axis=None):    
-        if self.zoom and x_axis is not None and y_axis is not None:
-            self.ax.set_xlim([x_axis.min() - 1, x_axis.max() + 1])
-            self.ax.set_ylim([y_axis.min() - 1, y_axis.max() + 1])
-        else:
-            self.ax.set_xlim(-70, 70)
+    def set_limits(self, x_limits=None, y_limits=None): 
+
+        if x_limits is not None and y_limits is not None:
+            self.ax.set_xlim(x_limits[0], x_limits[1])
+            self.ax.set_ylim(y_limits[0], y_limits[1])
+
+        else:   
             y_limits = {
                 'mixed': (-20, 20),
                 'baroclinic': (-20, 20),
                 'barotropic': (-200, 200)
             }
             self.ax.set_ylim(*y_limits.get(self.LPS_type, (-20, 20)))
+            self.ax.set_xlim(-70, 70)
+
+        x_limits, y_limits = self.ax.get_xlim(), self.ax.get_ylim()
+        
+        return *x_limits, *y_limits
 
     def get_labels(self):
         labels_dict = {}
@@ -202,29 +289,6 @@ class LorenzPhaseSpace:
                         verticalalignment='bottom', c='#383838',
                         labelpad=labelpad, y=0.59)
         
-    def make_title(self):
-        title = self.title
-        datasource = self.datasource
-        start = self.start
-        end = self.end
-
-        if title and datasource:
-            self.ax.text(0,1.12,'System: '+title+' - Data from: '+datasource,
-                    fontsize=16,c='#242424',horizontalalignment='left',
-                    transform=self.ax.transAxes)
-
-        if start:
-            self.ax.text(0,1.07,'Start (A):',fontsize=14,c='#242424',
-                    horizontalalignment='left',transform=self.ax.transAxes)
-            self.ax.text(0.14,1.07,str(start),fontsize=14,c='#242424',
-                    horizontalalignment='left',transform=self.ax.transAxes)
-            
-        if end:
-            self.ax.text(0,1.025,'End (Z):',fontsize=14,c='#242424',
-                    horizontalalignment='left',transform=self.ax.transAxes)
-            self.ax.text(0.14,1.025,str(end),fontsize=14,c='#242424',
-                    horizontalalignment='left',transform=self.ax.transAxes)
-        
     @staticmethod
     def plot_legend(ax, intervals, msizes, title_label):
         labels = ['< ' + str(intervals[0]),
@@ -298,174 +362,100 @@ class LorenzPhaseSpace:
                              alpha=alpha, c=color)
                 self.ax.plot([-x, -x_ticks[-1] - x], [-y, -y_ticks[-1] - y], linewidth=linewidth,
                              alpha=alpha, c=color)
-    
-    def create_lps_plot(self, x_axis=None, y_axis=None, **kwargs):
-        plt.close('all')
-        self.fig, self.ax = plt.subplots(figsize=(12, 10))
-        if x_axis is not None and y_axis is not None:
-            self.set_limits(x_axis, y_axis)  # This should also be adjusted to handle None values gracefully
-        else:
-            self.set_limits()
-
-        labels = self.get_labels()
-
-        # Colorbar setup
-        if self.zoom:
-            extend = 'neither'
-            norm = colors.Normalize(vmin=-1, vmax=1)  # Placeholder, adjust based on your data
-        else:
-            extend = 'both'
-            norm = colors.TwoSlopeNorm(vmin=-30, vcenter=0, vmax=30)
-
-        sm = plt.cm.ScalarMappable(cmap=cmocean.cm.curl, norm=norm)
-        sm.set_array([])
-        cax = self.ax.inset_axes([self.ax.get_position().x1 + 0.13, self.ax.get_position().y0 + 0.35, 0.02, self.ax.get_position().height / 1.5])
-        self.cbar = self.fig.colorbar(sm, extend=extend, cax=cax)
-        self.cbar.ax.set_ylabel(labels['color_label'], rotation=270, labelpad=25)  # Customize this
-        for t in self.cbar.ax.get_yticklabels():
-            t.set_fontsize(10)
-
-        self.annotate_plot(self.ax, self.cbar)
-        self.plot_gradient_lines(**kwargs) if not self.zoom else []
-
-        plt.subplots_adjust(right=0.8)
-
-        return self.fig, self.ax
-    
-    def plot_data(self, x_axis, y_axis, marker_color, marker_size, **kwargs):
-        if self.fig is None or self.ax is None:
-            print("Plot structure not initialized. Call create_lps_plot first.")
-            return
-        
-        # Standardize input data as pandas Series
-        x_axis = pd.Series(x_axis).reset_index(drop=True)
-        y_axis = pd.Series(y_axis).reset_index(drop=True)
-        marker_color = pd.Series(marker_color).reset_index(drop=True)
-        marker_size = pd.Series(marker_size).reset_index(drop=True)
-
-        # Make title
-        self.make_title()
-    
-        # Get labels
-        labels = self.get_labels()
-
-        # Normalize marker colors based on whether zoom is enabled or not
-        if self.zoom:
-            limits = kwargs.get('limits', [x_axis.min(), x_axis.max(), y_axis.min(), y_axis.max()])
-            self.plot_lines(limits, **kwargs)
-            max_colors, min_colors = get_max_min_values(marker_color)
-            norm = colors.Normalize(vmin=min_colors, vmax=max_colors)
-            extend = 'both'
-            alpha = 0.75
-
-        else:
-            norm = colors.TwoSlopeNorm(vmin=-30, vcenter=0, vmax=30)
-            extend = 'neither'
-            alpha = 1.0
-
-        # arrows connecting dots
-        self.ax.quiver(x_axis[:-1].values, y_axis[:-1].values,
-                        (x_axis[1:].values - x_axis[:-1].values) * .9,
-                        (y_axis[1:].values - y_axis[:-1].values) * .9,
-                        angles='xy', scale_units='xy', scale=1, color='k')
-
-        # Compute marker sizes and intervals
-        sizes, intervals = self.calculate_marker_size(marker_size, self.zoom)
-        msizes = [200, 400, 600, 800, 1000]
-
-        # Add legend with dynamic intervals and sizes
-        self.plot_legend(self.ax, intervals, msizes, labels['size_label'])
-
-        # plot the moment of maximum intensity
-        extreme = marker_size.idxmax()
-        self.ax.scatter(x_axis.loc[extreme], y_axis.loc[extreme],
-                c='None', s=sizes.loc[extreme] * 1.1, zorder=201, edgecolors='k', linewidth=3)
-
-        # Plot the data
-        cmap = kwargs.get('cmap', cmocean.cm.curl)
-        scatter = self.ax.scatter(x_axis, y_axis, c=marker_color, cmap=cmap, zorder=200,
-                                  norm=norm, s=sizes, edgecolors='k', alpha=alpha)
-        
-        # Adjust plot limits
-        self.set_limits(x_axis, y_axis)
-        
-        # Marking start and end of the system
-        self.ax.text(x_axis[0], y_axis[0], 'A', zorder=201, fontsize=25,
-                horizontalalignment='center', verticalalignment='center')
-        self.ax.text(x_axis.iloc[-1], y_axis.iloc[-1], 'Z', zorder=201, fontsize=25,
-                horizontalalignment='center', verticalalignment='center')
-
-        # Update the colorbar to match the new data
-        self.cbar.remove()  # Remove the old colorbar
-        
-        # Add colorbar
-        cax = self.ax.inset_axes([self.ax.get_position().x1 + 0.23, self.ax.get_position().y0 + 0.35, 0.02, self.ax.get_position().height / 1.5])
-        cbar = plt.colorbar(scatter, extend=extend, cax=cax)
-        for t in cbar.ax.get_yticklabels():
-            t.set_fontsize(10)
-        self.cbar.ax.set_ylabel(labels['color_label'], rotation=270, labelpad=25)
-
-        return self.fig, self.ax
         
 if __name__ == '__main__':
     import random
 
-    sample_file = 'samples/sample_results_1.csv'
-    df = pd.read_csv(sample_file, parse_dates={'Datetime': ['Date', 'Hour']}, date_format='%Y-%m-%d %H')
+    sample_file_1 = 'samples/sample_results_1.csv'
+    sample_file_2 = 'samples/sample_results_2.csv'
+    df_1 = pd.read_csv(sample_file_1, parse_dates={'Datetime': ['Date', 'Hour']},
+                       date_format='%Y-%m-%d %H')
+    df_2 = pd.read_csv(sample_file_2, parse_dates={'Datetime': ['Date', 'Hour']},
+                       date_format='%Y-%m-%d %H')
 
-    x_axis = df['Ck'].values
-    y_axis = df['Ca'].values
-    marker_color = df['Ge'].values
-    marker_size = df['Ke'].values
+    x_axis_1 = df_1['Ck'].values
+    y_axis_1 = df_1['Ca'].values
+    marker_color_1 = df_1['Ge'].values
+    marker_size_1 = df_1['Ke'].values
 
-    title = 'sample1'
-    datasource = 'ERA5'
-    start = pd.to_datetime(df['Datetime'].iloc[0]).strftime('%Y-%m-%d %H:%M')
-    end = pd.to_datetime(df['Datetime'].iloc[-1]).strftime('%Y-%m-%d %H:%M')
+    x_axis_2 = df_2['Ck'].values
+    y_axis_2 = df_2['Ca'].values
+    marker_color_2 = df_2['Ge'].values
+    marker_size_2 = df_2['Ke'].values
 
     # Test base plot
     lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
-    lps.create_lps_plot()
     fname = 'samples/lps_example'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
+    # Test base plot zoom 
+    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+    fname = 'samples/lps_example_zoom'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
     # Test without zoom
-    lps = LorenzPhaseSpace(title=title, datasource=datasource, start=start, end=end, LPS_type='mixed', zoom=False)
-    lps.create_lps_plot()
-    lps.plot_data(x_axis, y_axis, marker_color, marker_size)
+    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
+    lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     fname = 'samples/sample_1_LPS_mixed'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test with zoom
-    lps = LorenzPhaseSpace(title=title, datasource=datasource, start=start, end=end, LPS_type='mixed', zoom=True)
-    lps.create_lps_plot()
-    lps.plot_data(x_axis, y_axis, marker_color, marker_size)
+    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+    lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     fname = 'samples/sample_1_LPS_mixed_zoom'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
-    # Test zoom with very high values
-    n = len(df)  # Number of elements in each column
-    random_factors_Ck = np.random.randint(1, 11, size=n)
-    random_factors_Ca = np.random.randint(1, 11, size=n)
-    random_factors_Ge = np.random.randint(1, 11, size=n)
-    random_factors_Ke = np.random.randint(1, 11, size=n)
-
-    # Element-wise multiplication
-    x_axis_rdm = (df['Ck'] * random_factors_Ck).values
-    y_axis_rdm = (df['Ca'] * random_factors_Ca).values
-    marker_color_rdm = (df['Ge'] * random_factors_Ge).values
-    marker_size_rdm = (df['Ke'] * random_factors_Ke).values
-
-    lps = LorenzPhaseSpace(title=title, datasource=datasource, start=start, end=end, LPS_type='mixed', zoom=True)
-    lps.create_lps_plot()
-    lps.plot_data(x_axis_rdm, y_axis_rdm, marker_color_rdm, marker_size_rdm)
-    fname = 'samples/sample_1_LPS_mixed_zoom_rdm'
+    # Test with sample 2
+    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+    lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
+    fname = 'samples/sample_2'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
+    # Test with multiple plots - with zoom
+    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+    lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
+    lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
+    fname = 'samples/sample_1_LPS_mixed_zoom_multiple'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+    # Test with multiple plots - without zoom
+    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
+    lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
+    lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
+    fname = 'samples/sample_1_LPS_mixed_multiple'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+    # Test with multiple plots and dynamically selecting limits
+    x_min = np.min([x_axis_1, x_axis_2])
+    x_max = np.max([x_axis_1, x_axis_2])
+    y_min = np.min([y_axis_1, y_axis_2])
+    y_max = np.max([y_axis_1, y_axis_2])
+    color_min = np.min([marker_color_1, marker_color_2])
+    color_max = np.max([marker_color_1, marker_color_2])
+    size_min = np.min([marker_size_1, marker_size_2])
+    size_max = np.max([marker_size_1, marker_size_2])
+
+    lps = LorenzPhaseSpace(
+        LPS_type='mixed',
+        zoom=True,
+        x_limits=[x_min, x_max],
+        y_limits=[y_min, y_max],
+        color_limits=[color_min, color_max],
+        marker_limits=[size_min, size_max]
+        )
+    
+    lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
+    lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
+    fname = 'samples/sample_1_LPS_mixed_zoom_multiple_dynamic'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
 
 
 

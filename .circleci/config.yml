@@ -28,7 +28,7 @@ jobs:
 
       - run:
           name: Install package (build_test)
-          command: pipenv install dist/lorenz_phase_space-1.0.1-py3-none-any.whl
+          command: pipenv install dist/lorenz_phase_space-1.1.0-py3-none-any.whl
 
       - run:
           name: Install pytest (build_test)
@@ -73,7 +73,10 @@ jobs:
         
       - run:
           name: Publish on TestPyPI
-          command: pipenv run twine upload -u ${TESTPY_LOGIN} -p ${TESTPY_PASSWORD} --repository testpypi dist/* --verbose 
+          command: |
+            export TWINE_USERNAME=__token__
+            export TWINE_PASSWORD=$TESTPY_TOKEN
+            pipenv run twine upload --repository testpypi dist/* --verbose 
 
   pypi_publish:
     docker:
