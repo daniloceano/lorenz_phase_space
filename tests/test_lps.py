@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
-from ..LPS import LorenzPhaseSpace
+from lorenz_phase_space.phase_diagrams import Visualizer
 
-class TestLorenzPhaseSpace(unittest.TestCase):
+class TestVisualizer(unittest.TestCase):
 
     def setUp(self):
         # Updated setup to reflect class initialization changes
@@ -11,7 +11,7 @@ class TestLorenzPhaseSpace(unittest.TestCase):
         self.marker_color = np.array([7, 8, 9])
         self.marker_size = np.array([10, 11, 12])
         # Initialize with new zoom and limit options
-        self.lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True, 
+        self.lps = Visualizer(LPS_type='mixed', zoom=True, 
                                     x_limits=(1, 3), y_limits=(4, 6),
                                     color_limits=(7, 9), marker_limits=(10, 12))
 
@@ -22,7 +22,7 @@ class TestLorenzPhaseSpace(unittest.TestCase):
 
     def test_calculate_marker_size(self):
         # Updated to test with zoom parameter
-        sizes, intervals = LorenzPhaseSpace.calculate_marker_size(self.marker_size, zoom=True)
+        sizes, intervals = Visualizer.calculate_marker_size(self.marker_size, zoom=True)
         self.assertTrue(len(sizes) > 0)
         self.assertTrue(len(intervals) > 0)
 
@@ -50,7 +50,7 @@ class TestLorenzPhaseSpace(unittest.TestCase):
         marker_size_rdm = self.marker_size * random_factors
 
         # Recreate plot with updated dynamic limits based on random factors
-        self.lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True, 
+        self.lps = Visualizer(LPS_type='mixed', zoom=True, 
                                     x_limits=[np.min(x_axis_rdm), np.max(x_axis_rdm)],
                                     y_limits=[np.min(y_axis_rdm), np.max(y_axis_rdm)],
                                     color_limits=[np.min(marker_color_rdm), np.max(marker_color_rdm)],

@@ -51,7 +51,7 @@ To use this tool, ensure you have Python installed along with the required libra
 This example demonstrates using the Lorenz Phase Space visualization tool for a single dataset.
 
 ```
-from LPS import LorenzPhaseSpace
+from lorenz_phase_space.phase_diagrams import Visualizer
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -59,7 +59,7 @@ import matplotlib.pyplot as plt
 data = pd.read_csv('your_data.csv')
 
 # Initialize the Lorenz Phase Space plotter without zoom
-lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
+lps = Visualizer(LPS_type='mixed', zoom=False)
 
 # Plot your data
 lps.plot_data(
@@ -80,7 +80,7 @@ print(f"Saved {fname}.png")
 This example shows how to plot data from two datasets with zoom enabled for detailed analysis.
 
 ```
-from LPS import LorenzPhaseSpace
+from lorenz_phase_space.phase_diagrams import Visualizer
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -89,7 +89,7 @@ data1 = pd.read_csv('dataset1.csv')
 data2 = pd.read_csv('dataset2.csv')
 
 # Initialize the Lorenz Phase Space plotter with zoom
-lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+lps = Visualizer(LPS_type='mixed', zoom=True)
 
 # Plot data from the first dataset
 lps.plot_data(
@@ -118,7 +118,7 @@ print(f"Saved {fname}.png")
 This example demonstrates dynamically updating plot limits based on multiple datasets for enhanced visualization with zoom enabled.
 
 ```
-from LPS import LorenzPhaseSpace
+from lorenz_phase_space.phase_diagrams import Visualizer
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -134,7 +134,7 @@ color_min, color_max = np.min([data1['Ge'].min(), data2['Ge'].min()]), np.max([d
 size_min, size_max = np.min([data1['Ke'].min(), data2['Ke'].min()]), np.max([data1['Ke'].max(), data2['Ke'].max()])
 
 # Initialize Lorenz Phase Space with dynamic limits
-lps = LorenzPhaseSpace(
+lps = Visualizer(
     LPS_type='mixed',
     zoom=True,
     x_limits=[x_min, x_max],

@@ -1,12 +1,12 @@
 # **************************************************************************** #
 #                                                                              #
 #                                                         :::      ::::::::    #
-#    LPS.py                                             :+:      :+:    :+:    #
+#    phase_diagrams.py                                  :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/02/23 19:41:47 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/02/28 16:35:10 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -28,7 +28,7 @@ def get_max_min_values(series):
 
     return max_val, min_val
 
-class LorenzPhaseSpace:
+class Visualizer:
     def __init__(self, LPS_type='mixed', zoom=False,
                  x_limits=None, y_limits=None, 
                  color_limits=None, marker_limits=None,
@@ -384,40 +384,40 @@ if __name__ == '__main__':
     marker_size_2 = df_2['Ke'].values
 
     # Test base plot
-    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
+    lps = Visualizer(LPS_type='mixed', zoom=False)
     fname = 'samples/lps_example'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test base plot zoom 
-    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+    lps = Visualizer(LPS_type='mixed', zoom=True)
     fname = 'samples/lps_example_zoom'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test without zoom
-    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
+    lps = Visualizer(LPS_type='mixed', zoom=False)
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     fname = 'samples/sample_1_LPS_mixed'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test with zoom
-    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+    lps = Visualizer(LPS_type='mixed', zoom=True)
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     fname = 'samples/sample_1_LPS_mixed_zoom'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test with sample 2
-    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+    lps = Visualizer(LPS_type='mixed', zoom=True)
     lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
     fname = 'samples/sample_2'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test with multiple plots - with zoom
-    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=True)
+    lps = Visualizer(LPS_type='mixed', zoom=True)
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
     fname = 'samples/sample_1_LPS_mixed_zoom_multiple'
@@ -425,7 +425,7 @@ if __name__ == '__main__':
     print(f"Saved {fname}.png")
 
     # Test with multiple plots - without zoom
-    lps = LorenzPhaseSpace(LPS_type='mixed', zoom=False)
+    lps = Visualizer(LPS_type='mixed', zoom=False)
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
     fname = 'samples/sample_1_LPS_mixed_multiple'
@@ -433,16 +433,16 @@ if __name__ == '__main__':
     print(f"Saved {fname}.png")
 
     # Test with multiple plots and dynamically selecting limits
-    x_min = np.min([x_axis_1, x_axis_2])
-    x_max = np.max([x_axis_1, x_axis_2])
-    y_min = np.min([y_axis_1, y_axis_2])
-    y_max = np.max([y_axis_1, y_axis_2])
-    color_min = np.min([marker_color_1, marker_color_2])
-    color_max = np.max([marker_color_1, marker_color_2])
-    size_min = np.min([marker_size_1, marker_size_2])
-    size_max = np.max([marker_size_1, marker_size_2])
+    x_min = np.min([*x_axis_1, *x_axis_2])
+    x_max = np.max([*x_axis_1, *x_axis_2])
+    y_min = np.min([*y_axis_1, *y_axis_2])
+    y_max = np.max([*y_axis_1, *y_axis_2])
+    color_min = np.min([*marker_color_1, *marker_color_2])
+    color_max = np.max([*marker_color_1, *marker_color_2])
+    size_min = np.min([*marker_size_1, *marker_size_2])
+    size_max = np.max([*marker_size_1, *marker_size_2])
 
-    lps = LorenzPhaseSpace(
+    lps = Visualizer(
         LPS_type='mixed',
         zoom=True,
         x_limits=[x_min, x_max],
