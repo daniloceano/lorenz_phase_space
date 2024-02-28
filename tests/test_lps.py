@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
-import pandas as pd
-from LPS import LorenzPhaseSpace, get_max_min_values
+from ..LPS import LorenzPhaseSpace
 
 class TestLorenzPhaseSpace(unittest.TestCase):
 
