@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/02/28 16:35:10 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/03/04 09:47:55 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -29,9 +29,7 @@ def get_max_min_values(series):
     return max_val, min_val
 
 class Visualizer:
-    def __init__(self, LPS_type='mixed', zoom=False,
-                 x_limits=None, y_limits=None, 
-                 color_limits=None, marker_limits=None,
+    def __init__(self, LPS_type='mixed', zoom=False, x_limits=None, y_limits=None, color_limits=None, marker_limits=None,
                  **kwargs):
         
         # Set up figure
@@ -58,8 +56,23 @@ class Visualizer:
         # Normalize marker colors based on whether zoom is enabled or not
         if self.zoom:
             self.plot_lines(limits, **kwargs)
-            max_colors, min_colors = get_max_min_values([color_limits[0], color_limits[-1]])
-            self.norm = colors.Normalize(vmin=min_colors, vmax=max_colors)
+            # Get original upper and lower color limits
+            original_min_color, original_max_color = color_limits[0], color_limits[-1]
+            
+            # Adjust limits if necessary
+            if original_max_color < 0:
+                max_color = 1
+            else:
+                max_color = original_max_color
+            
+            if original_min_color > 0:
+                min_color = -1
+            else:
+                min_color = original_min_color
+            
+            # Ensure normalization is centered around 0 by adjusting min and max proportionally
+            max_abs_color = max(abs(min_color), abs(max_color))
+            self.norm = colors.TwoSlopeNorm(vmin=-max_abs_color, vcenter=0, vmax=max_abs_color)
             extend = 'both'
 
         else:
