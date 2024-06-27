@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/03/04 09:47:55 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/06/27 17:11:16 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -229,7 +229,7 @@ class Visualizer:
                 labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ce - $W m^{-2})$'
                 labels_dict['y_label'] = 'Conversion from zonal to eddy Potential Energy (Ca - $W m^{-2})$'
                 labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $W m^{-2})$'
-                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n     (Ke - $J m^{-2})$'
+                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n (Ke - $J m^{-2})$'
 
         elif self.LPS_type == 'barotropic':
             labels_dict['y_upper'] = 'Importation of Kinectic Energy'
@@ -245,14 +245,14 @@ class Visualizer:
 
             if self.zoom:
                 labels_dict['x_label'] = 'Ck - $W m^{-2})$'
-                labels_dict['y_label'] = 'Bkz - $W m^{-2})$'
+                labels_dict['y_label'] = 'Bke - $W m^{-2})$'
                 labels_dict['color_label'] = 'Ge - $W m^{-2})$'
                 labels_dict['size_label'] = 'Ke - $J m^{-2})$'
             else:
                 labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ck - $Wm^{-2})$'
-                labels_dict['y_label'] = ' Kinetic Energy transport across boundaries (BKz - $Wm^{-2})$'
+                labels_dict['y_label'] = ' Eddy Kinetic Energy transport across boundaries (BKe - $Wm^{-2})$'
                 labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $Wm^{-2})$'
-                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n     (Ke - $J m^{-2})$'            
+                labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n (Ke - $J m^{-2})$'            
 
         return labels_dict
     
@@ -386,6 +386,7 @@ if __name__ == '__main__':
     df_2 = pd.read_csv(sample_file_2, parse_dates={'Datetime': ['Date', 'Hour']},
                        date_format='%Y-%m-%d %H')
 
+    # Data for mixed LPS
     x_axis_1 = df_1['Ck'].values
     y_axis_1 = df_1['Ca'].values
     marker_color_1 = df_1['Ge'].values
@@ -396,9 +397,31 @@ if __name__ == '__main__':
     marker_color_2 = df_2['Ge'].values
     marker_size_2 = df_2['Ke'].values
 
+    # Data for barotropic LPS
+    x_axis_3 = df_2['Ck'].values
+    y_axis_3 = df_2['BKe'].values
+    marker_color_3 = df_2['Ge'].values
+    marker_size_3 = df_2['Ke'].values
+
+    # Data for baroclinic LPS
+    x_axis_4 = df_2['Ce'].values
+    y_axis_4 = df_2['Ca'].values
+    marker_color_4 = df_2['Ge'].values
+    marker_size_4 = df_2['Ke'].values
+
     # Test base plot
     lps = Visualizer(LPS_type='mixed', zoom=False)
-    fname = 'samples/lps_example'
+    fname = 'samples/lps_example_mixed'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+    lps = Visualizer(LPS_type='barotropic', zoom=False)
+    fname = 'samples/lps_example_barotropic'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+    lps = Visualizer(LPS_type='baroclinic', zoom=False)
+    fname = 'samples/lps_example_baroclinic'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
@@ -422,10 +445,31 @@ if __name__ == '__main__':
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
-    # Test with sample 2
-    lps = Visualizer(LPS_type='mixed', zoom=True)
+    # Test with sample 2 - mixed
+    lps = Visualizer(LPS_type='mixed', zoom=False)
     lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
-    fname = 'samples/sample_2'
+    fname = 'samples/sample_2_mixed'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+    # Test with sample 2 - barotropic
+    lps = Visualizer(LPS_type='barotropic', zoom=False)
+    lps.plot_data(x_axis_3, y_axis_3, marker_color_3, marker_size_3)
+    fname = 'samples/sample_2_barotropic'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+    # Test with sample 2 - baroclinic
+    lps = Visualizer(LPS_type='baroclinic', zoom=False)
+    lps.plot_data(x_axis_4, y_axis_4, marker_color_4, marker_size_4)
+    fname = 'samples/sample_2_baroclinic'
+    plt.savefig(f"{fname}.png", dpi=300)
+    print(f"Saved {fname}.png")
+
+    # Test with sample 2 - mixed
+    lps = Visualizer(LPS_type='mixed', zoom=False)
+    lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
+    fname = 'samples/sample_2_zoom'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 

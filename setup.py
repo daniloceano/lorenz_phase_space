@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 with open('README.md', encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
-VERSION = '1.2.1'
+VERSION = '1.2.2'
 DESCRIPTION = 'Visualization tool designed to analyze and illustrate the Lorenz Energy Cycle for atmospheric science.'
 
 setup(

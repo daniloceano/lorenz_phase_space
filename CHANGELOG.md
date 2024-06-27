@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.2] - 2024-06-27
+
+### Changed
+- Changed barotropic LPS for using BKe instead of BKz.
+- Test cases on main file now include multiple LPS types.
+
 ## [1.2.1] - 2024-02-28
 
 ### Changed
