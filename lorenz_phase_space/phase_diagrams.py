@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/06/27 17:11:16 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/07/01 11:10:57 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -173,7 +173,7 @@ class Visualizer:
             y_limits = {
                 'mixed': (-20, 20),
                 'baroclinic': (-20, 20),
-                'barotropic': (-200, 200)
+                'imports': (-200, 200)
             }
             self.ax.set_ylim(*y_limits.get(self.LPS_type, (-20, 20)))
             self.ax.set_xlim(-70, 70)
@@ -231,26 +231,26 @@ class Visualizer:
                 labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $W m^{-2})$'
                 labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n (Ke - $J m^{-2})$'
 
-        elif self.LPS_type == 'barotropic':
-            labels_dict['y_upper'] = 'Importation of Kinectic Energy'
-            labels_dict['y_lower'] = 'Exportation of Kinectic Energy'
-            labels_dict['x_left'] = 'Eddy is gaining kinetic energy \n from the mean flow'
-            labels_dict['x_right'] = 'Eddy is providing kinetic energy \n to the mean flow'
+        elif self.LPS_type == 'imports':
+            labels_dict['y_upper'] = 'Imports of Eddy Kinectic Energy'
+            labels_dict['y_lower'] = 'Exports of Eddy Kinectic Energy'
+            labels_dict['x_left'] = 'Imports of Eddy APE'
+            labels_dict['x_right'] = 'Exports of Eddy APE'
             labels_dict['col_lower'] = 'Subsidence decreases \n eddy potential energy'
             labels_dict['col_upper'] = 'Latent heat release feeds \n eddy potential energy'
-            labels_dict['lower_left'] = 'Barotropic instability wihtout \n downstream development'
-            labels_dict['upper_left'] = 'Barotropic instability and \n downstream development'
-            labels_dict['lower_right'] = 'Barotropic stability without \n downstream development'
-            labels_dict['upper_right'] = 'Barotropic stability and \n downstream development'
+            labels_dict['lower_left'] = ''
+            labels_dict['upper_left'] = ''
+            labels_dict['lower_right'] = ''
+            labels_dict['upper_right'] = ''
 
             if self.zoom:
-                labels_dict['x_label'] = 'Ck - $W m^{-2})$'
+                labels_dict['x_label'] = 'BAe - $W m^{-2})$'
                 labels_dict['y_label'] = 'Bke - $W m^{-2})$'
                 labels_dict['color_label'] = 'Ge - $W m^{-2})$'
                 labels_dict['size_label'] = 'Ke - $J m^{-2})$'
             else:
-                labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ck - $Wm^{-2})$'
-                labels_dict['y_label'] = ' Eddy Kinetic Energy transport across boundaries (BKe - $Wm^{-2})$'
+                labels_dict['x_label'] = 'Eddy Available Potential Energy transport across boundaries (BAe - $Wm^{-2})$'
+                labels_dict['y_label'] = 'Eddy Kinetic Energy transport across boundaries (BKe - $Wm^{-2})$'
                 labels_dict['color_label'] = 'Generation of eddy Potential Energy (Ge - $Wm^{-2})$'
                 labels_dict['size_label'] = 'Eddy Kinect\n    Energy\n (Ke - $J m^{-2})$'            
 
@@ -397,8 +397,8 @@ if __name__ == '__main__':
     marker_color_2 = df_2['Ge'].values
     marker_size_2 = df_2['Ke'].values
 
-    # Data for barotropic LPS
-    x_axis_3 = df_2['Ck'].values
+    # Data for imports LPS
+    x_axis_3 = df_2['BAe'].values
     y_axis_3 = df_2['BKe'].values
     marker_color_3 = df_2['Ge'].values
     marker_size_3 = df_2['Ke'].values
@@ -415,8 +415,8 @@ if __name__ == '__main__':
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
-    lps = Visualizer(LPS_type='barotropic', zoom=False)
-    fname = 'samples/lps_example_barotropic'
+    lps = Visualizer(LPS_type='imports', zoom=False)
+    fname = 'samples/lps_example_imports'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
@@ -452,10 +452,10 @@ if __name__ == '__main__':
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
-    # Test with sample 2 - barotropic
-    lps = Visualizer(LPS_type='barotropic', zoom=False)
+    # Test with sample 2 - imports
+    lps = Visualizer(LPS_type='imports', zoom=False)
     lps.plot_data(x_axis_3, y_axis_3, marker_color_3, marker_size_3)
-    fname = 'samples/sample_2_barotropic'
+    fname = 'samples/sample_2_imports'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
