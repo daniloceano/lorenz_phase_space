@@ -23,8 +23,8 @@ This mode is particularly useful for comprehensively analyzing scenarios where b
 - Baroclinic Mode: Focuses on the baroclinic processes, highlighting the role of temperature gradients and their impact on atmospheric energy transformations.
 This mode is vital for studying weather systems and jet stream dynamics.
 
-- Barotropic Mode: Concentrates on barotropic processes, where the redistribution of kinetic energy is predominant. 
-This mode is essential for understanding the horizontal movement of air and its implications on weather patterns.
+- Mixed Mode: Concentrates on processes related to imports and exports of eddy energy.
+This mode is useful for understanding scenarios where a nearby eddy is trigerring local development
 
 
 By utilizing the LPS tool, researchers and meteorologists can delve into the complexities of atmospheric energy cycles, gaining insights into how different energy forms interact and influence weather systems and climate patterns. 

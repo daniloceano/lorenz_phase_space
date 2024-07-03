@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/07/01 11:10:57 by daniloceano      ###   ########.fr        #
+#    Updated: 2024/07/03 20:29:27 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -198,10 +198,10 @@ class Visualizer:
             labels_dict['upper_right'] = 'Baroclinic instability'
 
             if self.zoom:
-                labels_dict['x_label'] = 'Ck - $W m^{-2})$'
-                labels_dict['y_label'] = 'Ca - $W m^{-2})$'
-                labels_dict['color_label'] = 'Ge - $W m^{-2})$'
-                labels_dict['size_label'] = 'Ke - $J m^{-2})$'
+                labels_dict['x_label'] = 'Ck - $(W m^{-2})$'
+                labels_dict['y_label'] = 'Ca - $(W m^{-2})$'
+                labels_dict['color_label'] = 'Ge - $(W m^{-2})$'
+                labels_dict['size_label'] = 'Ke - $(J m^{-2})$'
             else:
                 labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ck - $W m^{-2})$'
                 labels_dict['y_label'] = 'Conversion from zonal to eddy Potential Energy (Ca - $W m^{-2})$'
@@ -221,10 +221,10 @@ class Visualizer:
             labels_dict['upper_right'] = 'Baroclinic instability'
             
             if self.zoom:
-                labels_dict['x_label'] = 'Ce - $W m^{-2})$'
-                labels_dict['y_label'] = 'Ca - $W m^{-2})$'
-                labels_dict['color_label'] = 'Ge - $W m^{-2})$'
-                labels_dict['size_label'] = 'Ke - $J m^{-2})$'
+                labels_dict['x_label'] = 'Ce - $(W m^{-2})$'
+                labels_dict['y_label'] = 'Ca - $(W m^{-2})$'
+                labels_dict['color_label'] = 'Ge - $(W m^{-2})$'
+                labels_dict['size_label'] = 'Ke - $(J m^{-2})$'
             else:
                 labels_dict['x_label'] = 'Conversion from zonal to eddy Kinetic Energy (Ce - $W m^{-2})$'
                 labels_dict['y_label'] = 'Conversion from zonal to eddy Potential Energy (Ca - $W m^{-2})$'
@@ -244,10 +244,10 @@ class Visualizer:
             labels_dict['upper_right'] = ''
 
             if self.zoom:
-                labels_dict['x_label'] = 'BAe - $W m^{-2})$'
-                labels_dict['y_label'] = 'Bke - $W m^{-2})$'
-                labels_dict['color_label'] = 'Ge - $W m^{-2})$'
-                labels_dict['size_label'] = 'Ke - $J m^{-2})$'
+                labels_dict['x_label'] = 'BAe - $(W m^{-2})$'
+                labels_dict['y_label'] = 'Bke - $(W m^{-2})$'
+                labels_dict['color_label'] = 'Ge - $(W m^{-2})$'
+                labels_dict['size_label'] = 'Ke - $(J m^{-2})$'
             else:
                 labels_dict['x_label'] = 'Eddy Available Potential Energy transport across boundaries (BAe - $Wm^{-2})$'
                 labels_dict['y_label'] = 'Eddy Kinetic Energy transport across boundaries (BKe - $Wm^{-2})$'
@@ -329,17 +329,18 @@ class Visualizer:
         self.ax.axhline(y=0,linewidth=linewidth, c=color, alpha=alpha,zorder=1)
         self.ax.axvline(x=0,linewidth=linewidth, c=color, alpha=alpha,zorder=1)
 
-        # Vertical lines for mixed LPS
+        # Diagonal lines for mixed LPS
         if self.LPS_type == 'mixed':
             # Get the end points of the plot
-            end_point_x = limits[0] * 2
-            end_point_y = limits[3] * 2
+            end_point_x = limits[0]
+            end_point_y = - end_point_x
 
             # Generate points for the line
             x_points = np.linspace(0, end_point_x, 100)
             y_points = np.linspace(0, end_point_y, 100)
 
             self.ax.plot(x_points, y_points, linewidth=linewidth, c=color, alpha=alpha, zorder=2) 
+
                 
     def plot_gradient_lines(self, **kwargs):
         # Configure properties from kwargs
