@@ -6,9 +6,25 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2024/07/03 20:29:27 by daniloceano      ###   ########.fr        #
+#    Updated: 2025/12/30 09:30:48 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
+
+"""
+Lorenz Phase Space Visualization Module
+
+This module provides tools for visualizing the Lorenz Energy Cycle in atmospheric science,
+offering insights into baroclinic and barotropic instabilities, as well as energy imports/exports.
+
+The Lorenz Phase Space (LPS) complements the Cyclone Phase Space (CPS) by Hart, providing
+information about energetics while CPS provides structural information about cyclones.
+
+Classes:
+    Visualizer: Main class for creating Lorenz Phase Space diagrams
+
+Functions:
+    get_max_min_values: Utility function to calculate adjusted min/max values for normalization
+"""
 
 import pandas as pd
 import matplotlib.colors as colors
@@ -17,6 +33,32 @@ import cmocean
 import numpy as np
 
 def get_max_min_values(series):
+    """
+    Calculate adjusted maximum and minimum values from a series.
+    
+    Ensures that both positive and negative values are present in the range
+    by adjusting boundaries if necessary. This is useful for creating balanced
+    color normalizations centered around zero.
+    
+    Parameters
+    ----------
+    series : array-like
+        Data series to analyze
+    
+    Returns
+    -------
+    tuple
+        (max_val, min_val) - Adjusted maximum and minimum values
+    
+    Examples
+    --------
+    >>> series = np.array([-5, -3, -1])
+    >>> max_val, min_val = get_max_min_values(series)
+    >>> max_val
+    1
+    >>> min_val
+    -5
+    """
     max_val = np.amax(series)
     min_val = np.amin(series)
 
@@ -29,6 +71,93 @@ def get_max_min_values(series):
     return max_val, min_val
 
 class Visualizer:
+    """
+    Lorenz Phase Space Visualizer
+    
+    Creates customizable Lorenz Phase Space diagrams to analyze atmospheric energy dynamics.
+    Supports three types of phase space diagrams: mixed (default), baroclinic, and imports.
+    
+    The visualizer can operate in two modes:
+    - Standard mode: Fixed axis limits suitable for comparing multiple systems
+    - Zoom mode: Dynamic limits adjusted to data range for detailed single-system analysis
+    
+    Parameters
+    ----------
+    LPS_type : str, optional
+        Type of Lorenz Phase Space diagram. Options are:
+        - 'mixed': Shows both baroclinic and barotropic instabilities (default)
+        - 'baroclinic': Focuses on baroclinic processes
+        - 'imports': Analyzes eddy energy imports/exports
+    zoom : bool, optional
+        If True, adjusts plot limits dynamically based on data.
+        If False, uses fixed limits for standardized comparison (default: False)
+    x_limits : tuple or list, optional
+        Custom x-axis limits as [min, max]. Only used when zoom=True
+    y_limits : tuple or list, optional
+        Custom y-axis limits as [min, max]. Only used when zoom=True
+    color_limits : tuple or list, optional
+        Custom colorbar limits. Only used when zoom=True
+    marker_limits : tuple or list, optional
+        Custom marker size limits as [min, max]. Only used when zoom=True
+    **kwargs : dict
+        Additional keyword arguments for plot customization:
+        - line_alpha: Transparency of reference lines
+        - lw: Line width for reference lines
+        - c: Color for reference lines
+        - labelpad: Padding for axis labels
+        - fontsize: Font size for annotations
+    
+    Attributes
+    ----------
+    fig : matplotlib.figure.Figure
+        Figure object containing the plot
+    ax : matplotlib.axes.Axes
+        Axes object for the main plot
+    cbar : matplotlib.colorbar.Colorbar
+        Colorbar object showing the color scale
+    norm : matplotlib.colors.TwoSlopeNorm
+        Color normalization object centered at zero
+    LPS_type : str
+        Type of phase space diagram
+    zoom : bool
+        Whether zoom mode is enabled
+    
+    Examples
+    --------
+    Create a basic mixed LPS without zoom:
+    
+    >>> import pandas as pd
+    >>> import matplotlib.pyplot as plt
+    >>> from lorenz_phase_space.phase_diagrams import Visualizer
+    >>> 
+    >>> data = pd.read_csv('your_data.csv')
+    >>> lps = Visualizer(LPS_type='mixed', zoom=False)
+    >>> lps.plot_data(
+    ...     x_axis=data['Ck'],
+    ...     y_axis=data['Ca'],
+    ...     marker_color=data['Ge'],
+    ...     marker_size=data['Ke']
+    ... )
+    >>> plt.savefig('lps_diagram.png', dpi=300)
+    
+    Create a zoomed LPS with custom limits:
+    
+    >>> lps = Visualizer(
+    ...     LPS_type='mixed',
+    ...     zoom=True,
+    ...     x_limits=[-50, 50],
+    ...     y_limits=[-30, 30],
+    ...     color_limits=[-20, 20],
+    ...     marker_limits=[1e5, 8e5]
+    ... )
+    >>> lps.plot_data(data['Ck'], data['Ca'], data['Ge'], data['Ke'])
+    >>> plt.savefig('lps_zoomed.png', dpi=300)
+    
+    Notes
+    -----
+    The plotting functions are highly optimized for specific visual output.
+    Modifications to plotting methods may significantly alter diagram appearance.
+    """
     def __init__(self, LPS_type='mixed', zoom=False, x_limits=None, y_limits=None, color_limits=None, marker_limits=None,
                  **kwargs):
         
@@ -102,6 +231,59 @@ class Visualizer:
         plt.subplots_adjust(right=0.8)
 
     def plot_data(self, x_axis, y_axis, marker_color, marker_size, **kwargs):
+        """
+        Plot data points on the Lorenz Phase Space diagram.
+        
+        Adds trajectory data to the existing LPS plot, including arrows showing
+        evolution direction, markers sized by energy magnitude, and special
+        highlighting of maximum intensity points.
+        
+        Parameters
+        ----------
+        x_axis : array-like
+            X-axis values (e.g., Ck for mixed LPS, Ce for baroclinic)
+        y_axis : array-like
+            Y-axis values (e.g., Ca for mixed/baroclinic LPS)
+        marker_color : array-like
+            Values determining marker colors (typically Ge - Generation of eddy potential energy)
+        marker_size : array-like
+            Values determining marker sizes (typically Ke - Eddy kinetic energy)
+        **kwargs : dict
+            Additional plotting options:
+            - alpha: Transparency of markers (default: 1)
+            - cmap: Colormap for markers (default: cmocean.cm.curl)
+        
+        Returns
+        -------
+        tuple
+            (fig, ax) - Figure and axes objects
+        
+        Notes
+        -----
+        - The first point is marked with 'A' (start)
+        - The last point is marked with 'Z' (end)
+        - The point of maximum marker_size is highlighted with a thick black edge
+        - Arrows connect consecutive points showing temporal evolution
+        - Can be called multiple times to overlay multiple trajectories
+        
+        Examples
+        --------
+        Plot a single trajectory:
+        
+        >>> lps = Visualizer(LPS_type='mixed', zoom=False)
+        >>> lps.plot_data(
+        ...     x_axis=data['Ck'],
+        ...     y_axis=data['Ca'],
+        ...     marker_color=data['Ge'],
+        ...     marker_size=data['Ke']
+        ... )
+        
+        Plot multiple trajectories with custom transparency:
+        
+        >>> lps = Visualizer(LPS_type='mixed', zoom=True)
+        >>> lps.plot_data(data1['Ck'], data1['Ca'], data1['Ge'], data1['Ke'], alpha=0.7)
+        >>> lps.plot_data(data2['Ck'], data2['Ca'], data2['Ge'], data2['Ke'], alpha=0.7)
+        """
         if self.fig is None or self.ax is None:
             print("Plot structure not initialized. Call create_lps_plot first.")
             return
@@ -143,6 +325,49 @@ class Visualizer:
 
     @staticmethod
     def calculate_marker_size(term, zoom=False):
+        """
+        Calculate marker sizes and size intervals for legend.
+        
+        Converts energy values to appropriate marker sizes for visualization,
+        using either dynamic quantile-based intervals (zoom mode) or fixed
+        intervals (standard mode).
+        
+        Parameters
+        ----------
+        term : array-like
+            Energy values (e.g., Ke) to be represented by marker sizes
+        zoom : bool, optional
+            If True, calculates intervals based on data quantiles.
+            If False, uses fixed default intervals (default: False)
+        
+        Returns
+        -------
+        tuple
+            (sizes, intervals) where:
+            - sizes: pandas.Series of marker sizes for each data point
+            - intervals: list of threshold values for the legend
+        
+        Notes
+        -----
+        In zoom mode, intervals are calculated from quantiles [0.2, 0.4, 0.6, 0.8]
+        and rounded to two orders of magnitude below the minimum value for cleaner
+        legend labels.
+        
+        Default intervals (non-zoom): [3e5, 4e5, 5e5, 6e5]
+        Marker size options: [200, 400, 600, 800, 1000]
+        
+        Examples
+        --------
+        >>> import numpy as np
+        >>> ke_values = np.array([2e5, 4e5, 6e5, 8e5])
+        >>> sizes, intervals = Visualizer.calculate_marker_size(ke_values, zoom=True)
+        >>> print(sizes)
+        0    200
+        1    400
+        2    600
+        3    800
+        dtype: int64
+        """
         term = pd.Series(term)
         if zoom:
             # Calculate dynamic intervals based on quantiles if zoom is True
@@ -163,7 +388,36 @@ class Visualizer:
         sizes = pd.Series([msizes[next(i for i, v in enumerate(intervals) if val <= v)] if val <= intervals[-1] else msizes[-1] for val in term])
         return sizes, intervals
         
-    def set_limits(self, x_limits=None, y_limits=None): 
+    def set_limits(self, x_limits=None, y_limits=None):
+        """
+        Set axis limits for the plot.
+        
+        Configures x and y axis limits based on LPS type and zoom mode.
+        Uses custom limits if provided, otherwise applies type-specific defaults.
+        
+        Parameters
+        ----------
+        x_limits : tuple or list, optional
+            Custom x-axis limits as [min, max]
+        y_limits : tuple or list, optional
+            Custom y-axis limits as [min, max]
+        
+        Returns
+        -------
+        tuple
+            (x_min, x_max, y_min, y_max) - The applied axis limits
+        
+        Notes
+        -----
+        Default y-axis limits by LPS type:
+        - 'mixed': (-20, 20)
+        - 'baroclinic': (-20, 20)
+        - 'imports': (-200, 200)
+        
+        Default x-axis limits: (-70, 70) for all types
+        
+        Custom limits are only applied when zoom=True during initialization
+        """ 
 
         if x_limits is not None and y_limits is not None:
             self.ax.set_xlim(x_limits[0], x_limits[1])
@@ -183,6 +437,51 @@ class Visualizer:
         return *x_limits, *y_limits
 
     def get_labels(self):
+        """
+        Get axis labels and annotations for the current LPS type.
+        
+        Returns a dictionary containing all text labels specific to the
+        selected Lorenz Phase Space type, including axis labels, region
+        descriptions, and physical interpretations.
+        
+        Returns
+        -------
+        dict
+            Dictionary with the following keys:
+            - 'x_label': X-axis label
+            - 'y_label': Y-axis label
+            - 'color_label': Colorbar label
+            - 'size_label': Marker size legend label
+            - 'y_upper': Upper y-axis region description
+            - 'y_lower': Lower y-axis region description
+            - 'x_left': Left x-axis region description
+            - 'x_right': Right x-axis region description
+            - 'col_upper': Upper colorbar region description
+            - 'col_lower': Lower colorbar region description
+            - 'lower_left': Lower-left quadrant label
+            - 'upper_left': Upper-left quadrant label
+            - 'lower_right': Lower-right quadrant label
+            - 'upper_right': Upper-right quadrant label
+        
+        Notes
+        -----
+        Label format depends on zoom mode:
+        - Zoom mode: Abbreviated labels (e.g., "Ck - $(W m^{-2})$")
+        - Standard mode: Full descriptive labels
+        
+        Physical interpretations for 'mixed' LPS type:
+        - Upper-left: Barotropic and baroclinic instabilities
+        - Upper-right: Baroclinic instability
+        - Lower-left: Barotropic instability
+        - Lower-right: Eddy feeding local atmospheric circulation
+        
+        Examples
+        --------
+        >>> lps = Visualizer(LPS_type='mixed')
+        >>> labels = lps.get_labels()
+        >>> print(labels['upper_right'])
+        'Baroclinic instability'
+        """
         labels_dict = {}
 
         if self.LPS_type == 'mixed':
@@ -257,6 +556,41 @@ class Visualizer:
         return labels_dict
     
     def annotate_plot(self, ax, cbar, **kwargs):
+        """
+        Add annotations, labels, and descriptions to the plot.
+        
+        Places text annotations describing physical processes in different
+        regions of the phase space. Only adds detailed annotations in
+        standard (non-zoom) mode.
+        
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            Axes object to annotate
+        cbar : matplotlib.colorbar.Colorbar
+            Colorbar object to label
+        **kwargs : dict
+            Customization options:
+            - labelpad: Padding for axis labels (default: 5 for zoom, 38 for standard)
+            - fontsize: Font size for annotations (default: 10)
+            - label_fontsize: Font size for axis labels (default: 14 for zoom, 10 for standard)
+        
+        Notes
+        -----
+        In standard mode, adds color-coded text describing:
+        - Vertical axis regions (energy sources/sinks)
+        - Horizontal axis regions (energy transfers)
+        - Colorbar regions (generation/dissipation)
+        - Quadrant labels (instability types)
+        
+        Colors used:
+        - '#19616C' (teal): Energy consumption/exports
+        - '#CF6D66' (coral): Energy generation/imports
+        - '#660066' (purple): Baroclinic instability
+        - '#800000' (maroon): Combined instabilities
+        - '#000066' (navy): Barotropic processes
+        - '#383838' (dark gray): General labels
+        """
         labelpad = kwargs.get('labelpad', 5) if self.zoom else kwargs.get('labelpad', 38)
         annotation_fontsize = kwargs.get('fontsize', 10)
         label_fontsize = kwargs.get('label_fontsize', 14) if self.zoom else kwargs.get('label_fontsize', 10)
@@ -304,6 +638,33 @@ class Visualizer:
         
     @staticmethod
     def plot_legend(ax, intervals, msizes, title_label):
+        """
+        Create and position the marker size legend.
+        
+        Adds a legend showing the relationship between marker sizes and
+        the corresponding energy values they represent.
+        
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            Axes object to add legend to
+        intervals : list
+            Threshold values defining size categories
+        msizes : list
+            Marker sizes corresponding to each category [200, 400, 600, 800, 1000]
+        title_label : str
+            Title for the legend (typically energy variable name)
+        
+        Notes
+        -----
+        Legend is positioned to the right of the plot with specific formatting:
+        - Location: Lower left of the bbox area to the right of plot
+        - Frameless design matching the overall aesthetic
+        - Custom spacing for optimal readability
+        
+        The legend shows 5 size categories with labels like:
+        "< threshold1", "< threshold2", ..., "> threshold4"
+        """
         labels = ['< ' + str(intervals[0]),
                   '< ' + str(intervals[1]),
                   '< ' + str(intervals[2]),
@@ -321,6 +682,28 @@ class Visualizer:
                   handletextpad=1.5, scatterpoints=1)
         
     def plot_lines(self, limits, **kwargs):
+        """
+        Draw reference lines on the plot.
+        
+        Adds horizontal, vertical, and (for mixed LPS) diagonal reference lines
+        to delineate different regions of the phase space.
+        
+        Parameters
+        ----------
+        limits : tuple
+            Axis limits (x_min, x_max, y_min, y_max)
+        **kwargs : dict
+            Line styling options:
+            - line_alpha: Transparency (default: 0.2)
+            - lw: Line width (default: 20)
+            - c: Line color (default: '#383838')
+        
+        Notes
+        -----
+        For 'mixed' LPS type, adds diagonal line from origin to corner,
+        representing the boundary between different instability regimes.
+        This diagonal separates pure baroclinic from mixed instabilities.
+        """
         # Configure properties from kwargs        
         alpha = kwargs.get('line_alpha', 0.2)
         linewidth = kwargs.get('lw', 20)
@@ -343,6 +726,28 @@ class Visualizer:
 
                 
     def plot_gradient_lines(self, **kwargs):
+        """
+        Draw gradient lines around reference axes (standard mode only).
+        
+        Creates a series of parallel lines with increasing opacity approaching
+        the main reference axes, providing visual guides for interpreting
+        values near the axes.
+        
+        Parameters
+        ----------
+        **kwargs : dict
+            Line styling options:
+            - lw: Line width (default: 0.5)
+            - c: Line color (default: '#383838')
+        
+        Notes
+        -----
+        - Only called when zoom=False (standard mode)
+        - Creates 20 parallel lines with alpha values from 0 to 0.6
+        - For 'mixed' LPS type, includes diagonal gradient lines
+        - Lines are positioned based on axis tick spacing
+        - Provides subtle visual guidance without cluttering the plot
+        """
         # Configure properties from kwargs
         LPS_type = self.LPS_type
         linewidth = kwargs.get('lw', 0.5)

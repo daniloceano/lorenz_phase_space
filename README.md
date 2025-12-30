@@ -1,12 +1,9 @@
 [![PyPI](https://img.shields.io/pypi/v/lorenz-phase-space?label=pypi%20version)](https://pypi.org/project/lorenz-phase-space/)
 [![CircleCI](https://circleci.com/gh/daniloceano/lorenz_phase_space.svg?style=shield)](https://app.circleci.com/pipelines/github/daniloceano/lorenz_phase_space)
 
-
 # Lorenz Phase Space Visualization
 
-
 <img src="https://github.com/daniloceano/lorenz_phase_space/assets/56005607/862e0916-4960-4658-b7eb-91f7ad57fe9f" width="550">
-
 
 ## Overview
 
@@ -15,42 +12,74 @@ The Lorenz Phase Space (LPS) visualization tool is designed to analyze and illus
 This tool offers a unique perspective for studying the intricate processes governing atmospheric energetics and instability mechanisms.
 It visualizes the transformation and exchange of energy within the atmosphere, specifically focusing on the interactions between kinetic and potential energy forms as conceptualized by Edward Lorenz.
 
-Key features of the tool include:
+The LPS complements the Cyclone Phase Space (CPS) developed by Hart (2003). While the CPS provides information about cyclone structure (thermal symmetry and core temperature), the LPS focuses on energetics (baroclinic/barotropic instabilities and boundary energy fluxes).
 
-- Mixed Mode Visualization: Offers insights into both baroclinic and barotropic instabilities, which are fundamental in understanding large-scale atmospheric dynamics. 
+### Key Features
+
+- **Mixed Mode**: Offers insights into both baroclinic and barotropic instabilities, which are fundamental in understanding large-scale atmospheric dynamics. 
 This mode is particularly useful for comprehensively analyzing scenarios where both instabilities are at play.
 
-- Baroclinic Mode: Focuses on the baroclinic processes, highlighting the role of temperature gradients and their impact on atmospheric energy transformations.
+- **Baroclinic Mode**: Focuses on the baroclinic processes, highlighting the role of temperature gradients and their impact on atmospheric energy transformations.
 This mode is vital for studying weather systems and jet stream dynamics.
 
-- Mixed Mode: Concentrates on processes related to imports and exports of eddy energy.
-This mode is useful for understanding scenarios where a nearby eddy is trigerring local development
+- **Imports Mode**: Concentrates on processes related to imports and exports of eddy energy.
+This mode is useful for understanding scenarios where a nearby eddy is triggering local development.
 
+- **Flexible Visualization**: Supports both standard (fixed limits) and zoom (dynamic limits) modes for different analysis needs.
 
-By utilizing the LPS tool, researchers and meteorologists can delve into the complexities of atmospheric energy cycles, gaining insights into how different energy forms interact and influence weather systems and climate patterns. 
-The tool's ability to switch between different modes (mixed, baroclinic, and barotropic) allows for a multifaceted analysis of atmospheric dynamics, making it an invaluable resource in the field of meteorology and climate science.
+- **Multiple Trajectory Support**: Plot multiple cyclone lifecycles on the same diagram for comparison.
+
+By utilizing the LPS tool, researchers and meteorologists can delve into the complexities of atmospheric energy cycles, gaining insights into how different energy forms interact and influence weather systems and climate patterns.
+
+## Documentation
+
+📚 **[Complete API Documentation](docs/API_DOCUMENTATION.md)** - Detailed reference for all classes, methods, and parameters
+
+📓 **[Example Notebook](docs/example_usage.ipynb)** - Interactive Jupyter notebook with examples
+
+🔖 **[Quick Reference](docs/QUICK_REFERENCE.md)** - One-page reference guide
+
+🧪 **[Testing Guide](tests/TESTING.md)** - How to run tests and verify visual output
 
 ## Features
 
-- Visualization of data in Lorenz Phase Space.
-- Support for different types of Lorenz Phase Spaces: mixed, baroclinic, and barotropic.
-- Dynamic adjustment of visualization parameters based on data scale.
-- Customizable plotting options for detailed analysis.
+- Visualization of data in Lorenz Phase Space
+- Support for different types of Lorenz Phase Spaces: mixed, baroclinic, and imports
+- Dynamic adjustment of visualization parameters based on data scale
+- Customizable plotting options for detailed analysis
+- Support for multiple trajectories on a single plot
 
 ## Installation
 
-To use this tool, ensure you have Python installed along with the required libraries: pandas, matplotlib, numpy, and cmocean. You can install these packages using pip:
+### From PyPI
 
-
-```pip install pandas matplotlib numpy cmocean```
-
-## Usage
-
-# Simple Example with Zoom Disabled
-
-This example demonstrates using the Lorenz Phase Space visualization tool for a single dataset.
-
+```bash
+pip install lorenz-phase-space
 ```
+
+### From Source
+
+```bash
+git clone https://github.com/daniloceano/lorenz_phase_space.git
+cd lorenz_phase_space
+pip install -e .
+```
+
+### Dependencies
+
+```bash
+pip install pandas matplotlib numpy cmocean
+```
+
+## Quick Start
+
+## Quick Start
+
+### Simple Example
+
+This example demonstrates basic usage of the Lorenz Phase Space visualization tool.
+
+```python
 from lorenz_phase_space.phase_diagrams import Visualizer
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -58,10 +87,28 @@ import matplotlib.pyplot as plt
 # Load your data
 data = pd.read_csv('your_data.csv')
 
-# Initialize the Lorenz Phase Space plotter without zoom
+# Create LPS visualizer
 lps = Visualizer(LPS_type='mixed', zoom=False)
 
 # Plot your data
+lps.plot_data(
+    x_axis=data['Ck'],      # Conversion: mean to eddy KE
+    y_axis=data['Ca'],      # Conversion: mean to eddy APE
+    marker_color=data['Ge'], # Generation of eddy APE
+    marker_size=data['Ke']   # Eddy kinetic energy
+)
+
+# Save the visualization
+plt.savefig('lps_diagram.png', dpi=300, bbox_inches='tight')
+```
+
+### Example with Zoom for Detailed Analysis
+
+```python
+# Enable zoom for dynamic axis limits
+lps = Visualizer(LPS_type='mixed', zoom=True)
+
+# Plot data
 lps.plot_data(
     x_axis=data['Ck'],
     y_axis=data['Ca'],
@@ -69,71 +116,70 @@ lps.plot_data(
     marker_size=data['Ke']
 )
 
-# Save the visualization
-fname = 'samples/sample_1_LPS_mixed'
-plt.savefig(f"{fname}.png", dpi=300)
-print(f"Saved {fname}.png")
+plt.savefig('lps_zoomed.png', dpi=300, bbox_inches='tight')
 ```
 
-# Using Two Datasets with Zoom Enabled
+## Advanced Usage
 
-This example shows how to plot data from two datasets with zoom enabled for detailed analysis.
+### Comparing Multiple Cyclones
 
-```
+Plot two cyclone lifecycles on the same diagram for comparison.
+
+### Comparing Multiple Cyclones
+
+Plot two cyclone lifecycles on the same diagram for comparison.
+
+```python
 from lorenz_phase_space.phase_diagrams import Visualizer
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Load your datasets
-data1 = pd.read_csv('dataset1.csv')
-data2 = pd.read_csv('dataset2.csv')
+# Load datasets
+data1 = pd.read_csv('cyclone1.csv')
+data2 = pd.read_csv('cyclone2.csv')
 
-# Initialize the Lorenz Phase Space plotter with zoom
+# Create visualizer
 lps = Visualizer(LPS_type='mixed', zoom=True)
 
-# Plot data from the first dataset
+# Plot first cyclone
 lps.plot_data(
     x_axis=data1['Ck'],
     y_axis=data1['Ca'],
     marker_color=data1['Ge'],
-    marker_size=data1['Ke']
+    marker_size=data1['Ke'],
+    alpha=0.7  # Add transparency
 )
 
-# Plot data from the second dataset
+# Plot second cyclone
 lps.plot_data(
     x_axis=data2['Ck'],
     y_axis=data2['Ca'],
     marker_color=data2['Ge'],
-    marker_size=data2['Ke']
+    marker_size=data2['Ke'],
+    alpha=0.7
 )
 
-# Save the visualization
-fname = 'samples/sample_1_LPS_mixed_zoom_multiple'
-plt.savefig(f"{fname}.png", dpi=300)
-print(f"Saved {fname}.png")
+plt.savefig('lps_comparison.png', dpi=300, bbox_inches='tight')
 ```
 
-# Using Multiple Datasets with Dynamically Updating Limits
+### Using Custom Limits for Consistent Comparison
 
-This example demonstrates dynamically updating plot limits based on multiple datasets for enhanced visualization with zoom enabled.
+When comparing multiple systems, use custom limits to ensure consistent scales.
 
-```
-from lorenz_phase_space.phase_diagrams import Visualizer
-import pandas as pd
+```python
 import numpy as np
-import matplotlib.pyplot as plt
 
-# Load your datasets
-data1 = pd.read_csv('dataset1.csv')
-data2 = pd.read_csv('dataset2.csv')
+# Calculate dynamic limits across all datasets
+x_min = min(data1['Ck'].min(), data2['Ck'].min())
+x_max = max(data1['Ck'].max(), data2['Ck'].max())
+y_min = min(data1['Ca'].min(), data2['Ca'].min())
+y_max = max(data1['Ca'].max(), data2['Ca'].max())
+color_min = min(data1['Ge'].min(), data2['Ge'].min())
+color_max = max(data1['Ge'].max(), data2['Ge'].max())
+size_min = min(data1['Ke'].min(), data2['Ke'].min())
+size_max = max(data1['Ke'].max(), data2['Ke'].max())
 
-# Dynamically determine plot limits
-x_min, x_max = np.min([data1['Ck'].min(), data2['Ck'].min()]), np.max([data1['Ck'].max(), data2['Ck'].max()])
-y_min, y_max = np.min([data1['Ca'].min(), data2['Ca'].min()]), np.max([data1['Ca'].max(), data2['Ca'].max()])
-color_min, color_max = np.min([data1['Ge'].min(), data2['Ge'].min()]), np.max([data1['Ge'].max(), data2['Ge'].max()])
-size_min, size_max = np.min([data1['Ke'].min(), data2['Ke'].min()]), np.max([data1['Ke'].max(), data2['Ke'].max()])
-
-# Initialize Lorenz Phase Space with dynamic limits
+# Create LPS with custom limits
 lps = Visualizer(
     LPS_type='mixed',
     zoom=True,
@@ -143,26 +189,247 @@ lps = Visualizer(
     marker_limits=[size_min, size_max]
 )
 
-# Plot data from both datasets
-lps.plot_data(x_axis=data1['Ck'], y_axis=data1['Ca'], marker_color=data1['Ge'], marker_size=data1['Ke'])
-lps.plot_data(x_axis=data2['Ck'], y_axis=data2['Ca'], marker_color=data2['Ge'], marker_size=data2['Ke'])
+# Plot both datasets
+lps.plot_data(data1['Ck'], data1['Ca'], data1['Ge'], data1['Ke'], alpha=0.8)
+lps.plot_data(data2['Ck'], data2['Ca'], data2['Ge'], data2['Ke'], alpha=0.8)
 
-# Save the visualization
-fname = 'samples/sample_1_LPS_mixed_zoom_multiple_dynamic'
-plt.savefig(f"{fname}.png", dpi=300)
-print(f"Saved {fname}.png")
+plt.savefig('lps_custom_limits.png', dpi=300, bbox_inches='tight')
 ```
 
-These examples cover a range of scenarios from simple usage to more complex visualizations involving multiple datasets and dynamic adjustment of plot limits, showcasing the flexibility of the Lorenz Phase Space visualization tool.
+### Different LPS Types
+
+#### Baroclinic Mode
+
+Focus on baroclinic instability processes.
+
+```python
+lps = Visualizer(LPS_type='baroclinic', zoom=False)
+
+lps.plot_data(
+    x_axis=data['Ce'],  # Conversion: zonal to eddy KE
+    y_axis=data['Ca'],  # Conversion: zonal to eddy APE
+    marker_color=data['Ge'],
+    marker_size=data['Ke']
+)
+
+plt.savefig('lps_baroclinic.png', dpi=300, bbox_inches='tight')
+```
+
+#### Imports Mode
+
+Analyze energy imports and exports across boundaries.
+
+```python
+lps = Visualizer(LPS_type='imports', zoom=False)
+
+lps.plot_data(
+    x_axis=data['BAe'],  # Eddy APE transport
+    y_axis=data['BKe'],  # Eddy KE transport
+    marker_color=data['Ge'],
+    marker_size=data['Ke']
+)
+
+plt.savefig('lps_imports.png', dpi=300, bbox_inches='tight')
+```
+
+## Data Requirements
+
+Your input data should contain the following variables (units in W m⁻² for conversions/transports, J m⁻² for reservoirs):
+
+### For Mixed LPS
+- **Ck**: Conversion from mean to eddy kinetic energy
+- **Ca**: Conversion from mean to eddy available potential energy
+- **Ge**: Generation of eddy available potential energy
+- **Ke**: Eddy kinetic energy
+
+### For Baroclinic LPS
+- **Ce**: Conversion from zonal to eddy kinetic energy
+- **Ca**: Conversion from zonal to eddy available potential energy
+- **Ge**: Generation of eddy available potential energy
+- **Ke**: Eddy kinetic energy
+
+### For Imports LPS
+- **BAe**: Eddy APE transport across boundaries
+- **BKe**: Eddy KE transport across boundaries
+- **Ge**: Generation of eddy available potential energy
+- **Ke**: Eddy kinetic energy
+
+## Interpretation Guide
+
+### Mixed LPS Quadrants
+
+| Region | Description |
+|--------|-------------|
+| **Upper-Right** | Baroclinic instability dominant |
+| **Upper-Left** | Both baroclinic and barotropic instabilities |
+| **Lower-Left** | Barotropic instability dominant |
+| **Lower-Right** | Eddy feeding local atmospheric circulation |
+
+### Visual Elements
+
+- **Marker Color**: Red indicates latent heat release (positive Ge), Blue indicates subsidence (negative Ge)
+- **Marker Size**: Larger markers indicate higher eddy kinetic energy
+- **'A' Marker**: Start of the cyclone lifecycle
+- **'Z' Marker**: End of the cyclone lifecycle
+- **Thick Outline**: Point of maximum intensity (highest Ke)
+- **Arrows**: Show temporal evolution of the system
+
+## Testing
+
+Run the comprehensive test suite:
+
+```bash
+# Run all tests
+python -m pytest tests/test_lps.py -v
+
+# Run with visual inspection
+cd tests
+python test_lps.py
+```
+
+Visual outputs will be generated in `tests/test_outputs/` for manual verification.
+
+See [tests/TESTING.md](tests/TESTING.md) for detailed testing documentation.
+
+## API Reference
+
+For complete API documentation, see [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md).
+
+### Main Classes
+
+- **`Visualizer`**: Main class for creating LPS diagrams
+  - `plot_data()`: Add trajectory data to the plot
+  - `get_labels()`: Get axis labels for current LPS type
+  - `set_limits()`: Set custom axis limits
+  - `calculate_marker_size()`: Calculate marker sizes and intervals
+
+### Helper Functions
+
+- **`get_max_min_values()`**: Adjust min/max values for balanced normalization
+
+## Customization Options
+
+The `Visualizer` class accepts various customization parameters:
+
+```python
+lps = Visualizer(
+    LPS_type='mixed',        # 'mixed', 'baroclinic', or 'imports'
+    zoom=False,              # Enable dynamic limits
+    x_limits=None,           # Custom x-axis limits
+    y_limits=None,           # Custom y-axis limits
+    color_limits=None,       # Custom colorbar limits
+    marker_limits=None,      # Custom marker size limits
+    line_alpha=0.2,          # Reference line transparency
+    lw=20,                   # Reference line width
+    c='#383838',             # Reference line color
+    labelpad=5,              # Label padding
+    fontsize=10,             # Annotation font size
+    label_fontsize=14        # Axis label font size
+)
+```
+
+## Best Practices
+
+1. **Standardized Comparisons**: Use `zoom=False` with default limits when comparing multiple cyclones
+2. **Detailed Analysis**: Use `zoom=True` for single-system detailed analysis
+3. **Multiple Trajectories**: Calculate common limits when overlaying datasets
+4. **Data Quality**: Ensure temporal continuity for meaningful trajectory arrows
+5. **Visual Verification**: Always inspect generated plots visually
+6. **Resolution**: Save at 300 dpi for publication-quality figures
+
+## Examples with Sample Data
+
+The package includes sample data for testing and demonstration:
+
+```python
+from lorenz_phase_space.phase_diagrams import Visualizer
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load sample data
+df = pd.read_csv('samples/sample_results_1.csv', 
+                 parse_dates={'Datetime': ['Date', 'Hour']},
+                 date_format='%Y-%m-%d %H')
+
+# Create and plot
+lps = Visualizer(LPS_type='mixed', zoom=False)
+lps.plot_data(df['Ck'].values, df['Ca'].values,
+             df['Ge'].values, df['Ke'].values)
+
+plt.savefig('sample_lps.png', dpi=300, bbox_inches='tight')
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Q: Why aren't the arrows appearing?**
+A: Ensure your data has at least 2 time steps. Arrows connect consecutive points.
+
+**Q: The axis limits look strange**
+A: Verify your data units. Energy conversions should be in W m⁻², energy reservoirs in J m⁻².
+
+**Q: Colors don't match the expected pattern**
+A: Check that your Ge (generation) values have the correct sign. Positive should be energy generation.
+
+**Q: The plot looks different than expected**
+A: The plotting functions are highly optimized. Avoid modifying the core plotting methods directly.
+
+### Getting Help
+
+- **Email**: danilo.oceano@gmail.com
+- **GitHub Issues**: [github.com/daniloceano/lorenz_phase_space/issues](https://github.com/daniloceano/lorenz_phase_space/issues)
+- **Documentation**: See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) and [TESTING.md](TESTING.md)
 
 ## Contributing
 
-Contributions to the LPS project are welcome! If you have suggestions for improvements or new features, feel free to open an issue or submit a pull request.
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+Please ensure:
+- All tests pass
+- New features include tests
+- Documentation is updated
+- Visual outputs are verified
+
+## Citation
+
+If you use this package in your research, please cite:
+
+```bibtex
+@software{lorenz_phase_space,
+  author = {Couto de Souza, Danilo},
+  title = {Lorenz Phase Space Visualization Tool},
+  year = {2025},
+  url = {https://github.com/daniloceano/lorenz_phase_space},
+  version = {1.3.0}
+}
+```
+
+## References
+
+- Hart, R. E. (2003). A Cyclone Phase Space derived from thermal wind and thermal asymmetry. *Monthly Weather Review*, 131(4), 585-616.
+- Lorenz, E. N. (1955). Available potential energy and the maintenance of the general circulation. *Tellus*, 7(2), 157-167.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 ## Contact
 
-For any queries or further assistance with the Lorenz Phase Space project, please reach out to danilo.oceano@gmail.com.
+**Danilo Couto de Souza**
+- Email: danilo.oceano@gmail.com
+- GitHub: [@daniloceano](https://github.com/daniloceano)
+
+---
+
+**Note**: This tool is specifically designed for atmospheric science applications. The plotting functions are optimized for specific visual output characteristics. While the package is flexible for various use cases, modifications to core plotting methods may significantly alter the diagram appearance.

@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.0] - 2025-12-30
+
+### Added
+- **Comprehensive Documentation**: Complete API documentation with detailed parameter descriptions, examples, and best practices
+- **Docstrings**: Added NumPy-style docstrings to all classes, methods, and functions in `phase_diagrams.py`
+- **Example Notebook**: Interactive Jupyter notebook (`docs/example_usage.ipynb`) demonstrating all features
+- **Quick Reference Guide**: One-page reference (`docs/QUICK_REFERENCE.md`) for common operations
+- **Enhanced Test Suite**: 30+ comprehensive tests covering all functionality, edge cases, and visual output
+- **Visual Verification System**: Test outputs saved to `tests/test_outputs/` for manual inspection
+- **Test Classes**: 7 test classes (TestHelperFunctions, TestVisualizerInitialization, TestVisualizerMethods, TestDataPlotting, TestEdgeCases, TestVisualOutput, TestRealDataScenarios)
+
+### Changed
+- **Documentation Structure**: Reorganized documentation into `docs/` folder for better organization
+- **Testing Documentation**: Moved `TESTING.md` to `tests/` folder alongside test files
+- **README**: Complete rewrite with improved structure, quick start examples, and better organization
+- **Test Suite**: Complete rewrite of `tests/test_lps.py` with comprehensive coverage
+
+### Documentation
+- `docs/API_DOCUMENTATION.md`: Complete API reference (~400 lines)
+- `docs/QUICK_REFERENCE.md`: Quick reference guide (~200 lines)
+- `docs/example_usage.ipynb`: Interactive example notebook
+- `tests/TESTING.md`: Comprehensive testing guide (~500 lines)
+- Enhanced `README.md` with better examples and structure
+
+### Notes
+- No changes to plotting logic - all visual output remains identical
+- Backward compatible - all existing code will work without modifications
+- Tests verified and passing
+
 ## [1.2.4] - 2024-07-03
 
 ### Bug Fixes
