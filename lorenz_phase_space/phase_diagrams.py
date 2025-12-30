@@ -374,8 +374,10 @@ class Visualizer:
             intervals = list(term.quantile([0.2, 0.4, 0.6, 0.8]))
 
             # Determine the order of magnitude of the minimum interval value
+            # Use absolute value to handle negative numbers
             min_val = min(intervals)
-            order_of_magnitude = 10 ** int(np.floor(np.log10(min_val))) if min_val != 0 else 1
+            abs_min_val = abs(min_val)
+            order_of_magnitude = 10 ** int(np.floor(np.log10(abs_min_val))) if abs_min_val > 0 else 1
 
             # Round intervals to two orders of magnitude lower than the minimum value
             round_to = order_of_magnitude / 100

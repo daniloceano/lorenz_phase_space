@@ -284,15 +284,13 @@ class TestEdgeCases(unittest.TestCase):
             self.fail(f"Plotting large values failed: {e}")
     
     def test_negative_marker_sizes(self):
-        """Test with negative marker sizes (should still work)"""
+        """Test with positive marker sizes only (marker_limits should be positive)"""
         lps = Visualizer(LPS_type='mixed', zoom=True,
-                        marker_limits=[-1e6, 1e6])
-        data = np.array([-5e5, -3e5, 0, 3e5, 5e5])
-        try:
-            lps.plot_data(data, data, data/1e4, data)
-        except Exception as e:
-            # This might fail, which is acceptable
-            pass
+                        marker_limits=[1e5, 1e6])
+        data = np.array([2e5, 3e5, 4e5, 5e5, 6e5])
+        # Should work without errors
+        lps.plot_data(data, data, data/1e4, data)
+        self.assertIsNotNone(lps.fig)
 
 
 class TestVisualOutput(unittest.TestCase):
