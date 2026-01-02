@@ -26,7 +26,7 @@ jobs:
           name: Install pipenv (build_test)
           command: sudo pip install pipenv
 
-        - run:
+      - run:
           name: Install package (build_test)
           command: pipenv install dist/lorenz_phase_space-1.4.0-py3-none-any.whl
 
