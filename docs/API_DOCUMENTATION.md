@@ -18,7 +18,7 @@ Complete API reference for the Lorenz Phase Space visualization tool.
 
 ## Visualizer Class
 
-### `class Visualizer(LPS_type='mixed', zoom=False, x_limits=None, y_limits=None, color_limits=None, marker_limits=None, **kwargs)`
+### `class Visualizer(LPS_type='conversion', zoom=False, x_limits=None, y_limits=None, color_limits=None, marker_limits=None, **kwargs)`
 
 Main class for creating Lorenz Phase Space diagrams.
 
@@ -26,7 +26,7 @@ Main class for creating Lorenz Phase Space diagrams.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `LPS_type` | str | `'mixed'` | Type of LPS diagram: `'mixed'`, `'baroclinic'`, or `'imports'` |
+| `LPS_type` | str | `'conversion'` | Type of LPS diagram: `'conversion'`, `'baroclinic'`, or `'imports'` |
 | `zoom` | bool | `False` | Enable dynamic axis limits based on data |
 | `x_limits` | tuple/list | `None` | Custom x-axis limits `[min, max]` (only with `zoom=True`) |
 | `y_limits` | tuple/list | `None` | Custom y-axis limits `[min, max]` (only with `zoom=True`) |
@@ -53,29 +53,60 @@ Plot data points on the Lorenz Phase Space diagram.
 
 **Parameters:**
 - `x_axis` (array-like): X-axis values
-  - For 'mixed': Ck (Conversion from mean to eddy kinetic energy)
+  - For 'conversion': Ck (Conversion from mean to eddy kinetic energy)
   - For 'baroclinic': Ce (Conversion from zonal to eddy kinetic energy)
   - For 'imports': BAe (Eddy APE transport across boundaries)
 - `y_axis` (array-like): Y-axis values
-  - For 'mixed'/'baroclinic': Ca (Conversion from zonal to eddy potential energy)
+  - For 'conversion'/'baroclinic': Ca (Conversion from zonal to eddy potential energy)
   - For 'imports': BKe (Eddy KE transport across boundaries)
 - `marker_color` (array-like): Values determining marker colors (typically Ge - Generation of eddy potential energy)
 - `marker_size` (array-like): Values determining marker sizes (typically Ke - Eddy kinetic energy)
 - `**kwargs`: Additional options
   - `alpha` (float): Transparency of markers (default: 1.0)
   - `cmap`: Colormap for markers (default: cmocean.cm.curl)
+  - `use_arrows` (bool): If True, use arrows; if False, use simple gray lines (default: False)
+  - `connection_color` (str): Color of connection lines when use_arrows=False (default: 'gray')
+  - `connection_alpha` (float): Alpha of connection lines when use_arrows=False (default: 0.5)
+  - `connection_linewidth` (float): Line width of connections when use_arrows=False (default: 1.5)
 
 **Returns:**
 - `tuple`: (fig, ax) - Figure and axes objects
 
-**Example:**
+**Examples:**
+
+Basic plot with default gray lines:
 ```python
-lps = Visualizer(LPS_type='mixed', zoom=False)
+lps = Visualizer(LPS_type='conversion', zoom=False)
 lps.plot_data(
     x_axis=data['Ck'],
     y_axis=data['Ca'],
     marker_color=data['Ge'],
     marker_size=data['Ke']
+)
+```
+
+Using arrows instead of lines:
+```python
+lps.plot_data(
+    x_axis=data['Ck'],
+    y_axis=data['Ca'],
+    marker_color=data['Ge'],
+    marker_size=data['Ke'],
+    use_arrows=True
+)
+```
+
+Custom connection line styling:
+```python
+lps.plot_data(
+    x_axis=data['Ck'],
+    y_axis=data['Ca'],
+    marker_color=data['Ge'],
+    marker_size=data['Ke'],
+    use_arrows=False,
+    connection_color='darkgray',
+    connection_alpha=0.7,
+    connection_linewidth=2.0
 )
 ```
 
@@ -115,7 +146,7 @@ Set axis limits for the plot.
 
 **Default Limits:**
 - X-axis: `(-70, 70)` for all types
-- Y-axis mixed: `(-20, 20)`
+- Y-axis conversion: `(-20, 20)`
 - Y-axis baroclinic: `(-20, 20)`
 - Y-axis imports: `(-200, 200)`
 
@@ -253,7 +284,7 @@ import matplotlib.pyplot as plt
 data = pd.read_csv('cyclone_data.csv')
 
 # Create standard LPS
-lps = Visualizer(LPS_type='mixed', zoom=False)
+lps = Visualizer(LPS_type='conversion', zoom=False)
 
 # Plot data
 lps.plot_data(
@@ -271,7 +302,7 @@ plt.savefig('lps_diagram.png', dpi=300, bbox_inches='tight')
 
 ```python
 # Create zoomed LPS
-lps = Visualizer(LPS_type='mixed', zoom=True)
+lps = Visualizer(LPS_type='conversion', zoom=True)
 
 # Plot data
 lps.plot_data(
@@ -303,7 +334,7 @@ size_max = max(data1['Ke'].max(), data2['Ke'].max())
 
 # Create LPS with custom limits
 lps = Visualizer(
-    LPS_type='mixed',
+    LPS_type='conversion',
     zoom=True,
     x_limits=[x_min, x_max],
     y_limits=[y_min, y_max],
@@ -387,7 +418,7 @@ plt.savefig('lps_imports.png', dpi=300, bbox_inches='tight')
 
 ```python
 lps = Visualizer(
-    LPS_type='mixed',
+    LPS_type='conversion',
     zoom=False,
     line_alpha=0.3,
     lw=15,

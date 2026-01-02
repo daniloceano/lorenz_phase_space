@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 data = pd.read_csv('your_data.csv')
 
 # Create and plot
-lps = Visualizer(LPS_type='mixed', zoom=False)
+lps = Visualizer(LPS_type='conversion', zoom=False)
 lps.plot_data(data['Ck'], data['Ca'], data['Ge'], data['Ke'])
 plt.savefig('lps.png', dpi=300, bbox_inches='tight')
 ```
@@ -26,7 +26,7 @@ plt.savefig('lps.png', dpi=300, bbox_inches='tight')
 
 | Type | X-axis | Y-axis | Purpose |
 |------|--------|--------|---------|
-| `'mixed'` | Ck | Ca | Both baroclinic and barotropic instabilities |
+| `'conversion'` | Ck | Ca | Both baroclinic and barotropic instabilities |
 | `'baroclinic'` | Ce | Ca | Baroclinic processes only |
 | `'imports'` | BAe | BKe | Energy imports/exports |
 
@@ -36,7 +36,7 @@ plt.savefig('lps.png', dpi=300, bbox_inches='tight')
 
 ```python
 Visualizer(
-    LPS_type='mixed',      # 'mixed', 'baroclinic', or 'imports'
+    LPS_type='conversion',      # 'conversion', 'baroclinic', or 'imports'
     zoom=False,            # True for dynamic limits
     x_limits=[-50, 50],    # Custom x-axis range
     y_limits=[-30, 30],    # Custom y-axis range
@@ -55,7 +55,11 @@ lps.plot_data(
     y_axis=data['Ca'],        # Y values
     marker_color=data['Ge'],  # Color values
     marker_size=data['Ke'],   # Size values
-    alpha=0.8                 # Transparency (0-1)
+    alpha=0.8,                # Transparency (0-1)
+    use_arrows=False,         # True for arrows, False for lines (default)
+    connection_color='gray',  # Color of connection lines
+    connection_alpha=0.5,     # Transparency of connections
+    connection_linewidth=1.5  # Width of connection lines
 )
 ```
 
@@ -103,7 +107,7 @@ x_max = max(data1['Ck'].max(), data2['Ck'].max())
 
 # Create with custom limits
 lps = Visualizer(
-    LPS_type='mixed', zoom=True,
+    LPS_type='conversion', zoom=True,
     x_limits=[x_min, x_max],
     y_limits=[y_min, y_max],
     color_limits=[color_min, color_max],
@@ -211,7 +215,7 @@ def main():
     data = pd.read_csv('data/cyclone_data.csv')
     
     # Create visualizer
-    lps = Visualizer(LPS_type='mixed', zoom=False)
+    lps = Visualizer(LPS_type='conversion', zoom=False)
     
     # Plot data
     lps.plot_data(

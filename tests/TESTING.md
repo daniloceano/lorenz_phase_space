@@ -80,14 +80,14 @@ Tests utility functions used by the Visualizer.
 **Tests:**
 - `test_get_max_min_values_all_negative`: Validates behavior with all negative values
 - `test_get_max_min_values_all_positive`: Validates behavior with all positive values
-- `test_get_max_min_values_mixed`: Validates behavior with mixed values
+- `test_get_max_min_values_conversion`: Validates behavior with conversion values
 
 ### 2. TestVisualizerInitialization
 Tests Visualizer class initialization with various parameters.
 
 **Tests:**
 - `test_default_initialization`: Default settings
-- `test_mixed_type_no_zoom`: Mixed LPS without zoom
+- `test_conversion_type_no_zoom`: Mixed LPS without zoom
 - `test_baroclinic_type_no_zoom`: Baroclinic LPS
 - `test_imports_type_no_zoom`: Imports LPS
 - `test_with_zoom`: Zoom mode enabled
@@ -99,7 +99,7 @@ Tests individual methods of the Visualizer class.
 **Tests:**
 - `test_calculate_marker_size_no_zoom`: Marker sizing in standard mode
 - `test_calculate_marker_size_with_zoom`: Marker sizing in zoom mode
-- `test_get_labels_mixed`: Label generation for mixed LPS
+- `test_get_labels_conversion`: Label generation for conversion LPS
 - `test_get_labels_baroclinic`: Label generation for baroclinic LPS
 - `test_get_labels_imports`: Label generation for imports LPS
 - `test_set_limits_default`: Default axis limits
@@ -128,8 +128,8 @@ Tests edge cases and error handling.
 Integration tests that generate actual plot files for visual inspection.
 
 **Tests:**
-- `test_save_mixed_no_zoom`: Standard mixed LPS
-- `test_save_mixed_with_zoom`: Zoomed mixed LPS
+- `test_save_conversion_no_zoom`: Standard conversion LPS
+- `test_save_conversion_with_zoom`: Zoomed conversion LPS
 - `test_save_baroclinic`: Baroclinic LPS
 - `test_save_imports`: Imports LPS
 - `test_save_multiple_trajectories`: Multiple trajectories with custom limits
@@ -140,7 +140,7 @@ Integration tests that generate actual plot files for visual inspection.
 Tests with actual sample data files (if available).
 
 **Tests:**
-- `test_sample_data_mixed`: Plot sample data in mixed mode
+- `test_sample_data_conversion`: Plot sample data in conversion mode
 - `test_sample_data_dynamic_limits`: Multiple sample datasets with dynamic limits
 
 **Requirements:** Sample CSV files in `samples/` directory
@@ -247,7 +247,7 @@ def compare_images(img1_path, img2_path, threshold=0.95):
 
 ✅ **Covered:**
 - Initialization with all parameter combinations
-- All three LPS types (mixed, baroclinic, imports)
+- All three LPS types (conversion, baroclinic, imports)
 - Zoom and non-zoom modes
 - Custom limit setting
 - Marker size calculation
@@ -355,7 +355,7 @@ class TestColorNormalization(unittest.TestCase):
     def test_symmetric_color_range(self):
         """Test that color normalization is symmetric around zero"""
         lps = Visualizer(
-            LPS_type='mixed',
+            LPS_type='conversion',
             zoom=True,
             color_limits=[-10, 10]
         )
@@ -368,7 +368,7 @@ class TestColorNormalization(unittest.TestCase):
     def test_asymmetric_color_adjustment(self):
         """Test that asymmetric ranges are adjusted to be symmetric"""
         lps = Visualizer(
-            LPS_type='mixed',
+            LPS_type='conversion',
             zoom=True,
             color_limits=[-5, 15]
         )

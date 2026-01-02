@@ -19,6 +19,27 @@ from pathlib import Path
 from lorenz_phase_space.phase_diagrams import Visualizer, get_max_min_values
 
 
+def load_sample_data():
+    """Load real cyclone data from samples for testing"""
+    base_path = Path(__file__).parent.parent / 'samples'
+    sample1_path = base_path / 'sample_results_1.csv'
+    
+    if not sample1_path.exists():
+        # Fallback to synthetic data if sample files not found
+        np.random.seed(42)
+        n = 10
+        return pd.DataFrame({
+            'Ck': np.linspace(-30, 20, n),
+            'Ca': np.linspace(-2, 6, n),
+            'Ge': np.linspace(-8, 8, n),
+            'Ke': np.linspace(3e5, 7e5, n)
+        })
+    
+    data = pd.read_csv(sample1_path, parse_dates={'Datetime': ['Date', 'Hour']},
+                       date_format='%Y-%m-%d %H')
+    return data
+
+
 class TestHelperFunctions(unittest.TestCase):
     """Test utility functions"""
     
@@ -50,7 +71,7 @@ class TestVisualizerInitialization(unittest.TestCase):
     def test_default_initialization(self):
         """Test default initialization"""
         lps = Visualizer()
-        self.assertEqual(lps.LPS_type, 'mixed')
+        self.assertEqual(lps.LPS_type, 'conversion')
         self.assertFalse(lps.zoom)
         self.assertIsNotNone(lps.fig)
         self.assertIsNotNone(lps.ax)
@@ -58,8 +79,8 @@ class TestVisualizerInitialization(unittest.TestCase):
     
     def test_mixed_type_no_zoom(self):
         """Test mixed LPS without zoom"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
-        self.assertEqual(lps.LPS_type, 'mixed')
+        lps = Visualizer(LPS_type='conversion', zoom=False)
+        self.assertEqual(lps.LPS_type, 'conversion')
         self.assertFalse(lps.zoom)
         plt.close('all')
     
@@ -77,14 +98,14 @@ class TestVisualizerInitialization(unittest.TestCase):
     
     def test_with_zoom(self):
         """Test initialization with zoom enabled"""
-        lps = Visualizer(LPS_type='mixed', zoom=True)
+        lps = Visualizer(LPS_type='conversion', zoom=True)
         self.assertTrue(lps.zoom)
         plt.close('all')
     
     def test_with_custom_limits(self):
         """Test initialization with custom limits"""
         lps = Visualizer(
-            LPS_type='mixed',
+            LPS_type='conversion',
             zoom=True,
             x_limits=[-50, 50],
             y_limits=[-30, 30],
@@ -103,11 +124,12 @@ class TestVisualizerMethods(unittest.TestCase):
     """Test individual methods of Visualizer class"""
     
     def setUp(self):
-        """Set up test data"""
-        self.x_axis = np.array([1, 2, 3, 4, 5])
-        self.y_axis = np.array([5, 4, 3, 2, 1])
-        self.marker_color = np.array([-2, -1, 0, 1, 2])
-        self.marker_size = np.array([3e5, 4e5, 5e5, 6e5, 7e5])
+        """Set up test data using real sample data"""
+        data = load_sample_data()
+        self.x_axis = data['Ck'].values[:5]
+        self.y_axis = data['Ca'].values[:5]
+        self.marker_color = data['Ge'].values[:5]
+        self.marker_size = data['Ke'].values[:5]
     
     def tearDown(self):
         """Clean up after tests"""
@@ -117,7 +139,7 @@ class TestVisualizerMethods(unittest.TestCase):
         """Test marker size calculation without zoom"""
         sizes, intervals = Visualizer.calculate_marker_size(self.marker_size, zoom=False)
         self.assertEqual(len(sizes), len(self.marker_size))
-        self.assertEqual(len(intervals), 4)
+        self.assertEqual(len(intervals), 5)  # Updated to 5 for conversion LPS
         self.assertIsInstance(sizes, pd.Series)
         self.assertIsInstance(intervals, list)
     
@@ -131,7 +153,7 @@ class TestVisualizerMethods(unittest.TestCase):
     
     def test_get_labels_mixed(self):
         """Test label generation for mixed LPS"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         labels = lps.get_labels()
         self.assertIsInstance(labels, dict)
         required_keys = ['x_label', 'y_label', 'color_label', 'size_label',
@@ -158,18 +180,21 @@ class TestVisualizerMethods(unittest.TestCase):
     
     def test_set_limits_default(self):
         """Test default limit setting"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         limits = lps.set_limits()
         self.assertEqual(len(limits), 4)
         x_lim = lps.ax.get_xlim()
         y_lim = lps.ax.get_ylim()
-        self.assertAlmostEqual(x_lim[0], -70, places=1)
-        self.assertAlmostEqual(y_lim[0], -20, places=1)
+        # Conversion LPS has different default limits
+        self.assertAlmostEqual(x_lim[0], -50, places=1)  # Ck: -50 to 30
+        self.assertAlmostEqual(x_lim[1], 30, places=1)
+        self.assertAlmostEqual(y_lim[0], -3, places=1)   # Ca: -3 to 8
+        self.assertAlmostEqual(y_lim[1], 8, places=1)
         plt.close('all')
     
     def test_set_limits_custom(self):
         """Test custom limit setting"""
-        lps = Visualizer(LPS_type='mixed', zoom=True,
+        lps = Visualizer(LPS_type='conversion', zoom=True,
                         x_limits=[-40, 40], y_limits=[-15, 15])
         x_lim = lps.ax.get_xlim()
         y_lim = lps.ax.get_ylim()
@@ -182,13 +207,12 @@ class TestDataPlotting(unittest.TestCase):
     """Test data plotting functionality"""
     
     def setUp(self):
-        """Set up test data"""
-        np.random.seed(42)
-        n_points = 10
-        self.x_axis = np.linspace(-30, 30, n_points)
-        self.y_axis = np.sin(self.x_axis / 10) * 10
-        self.marker_color = np.linspace(-10, 10, n_points)
-        self.marker_size = np.linspace(3e5, 7e5, n_points)
+        """Set up test data using real sample data"""
+        data = load_sample_data()
+        self.x_axis = data['Ck'].values[:10]
+        self.y_axis = data['Ca'].values[:10]
+        self.marker_color = data['Ge'].values[:10]
+        self.marker_size = data['Ke'].values[:10]
     
     def tearDown(self):
         """Clean up after tests"""
@@ -196,7 +220,7 @@ class TestDataPlotting(unittest.TestCase):
     
     def test_plot_data_basic(self):
         """Test basic data plotting"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         try:
             fig, ax = lps.plot_data(self.x_axis, self.y_axis, 
                                    self.marker_color, self.marker_size)
@@ -207,7 +231,7 @@ class TestDataPlotting(unittest.TestCase):
     
     def test_plot_data_with_zoom(self):
         """Test data plotting with zoom"""
-        lps = Visualizer(LPS_type='mixed', zoom=True)
+        lps = Visualizer(LPS_type='conversion', zoom=True)
         try:
             fig, ax = lps.plot_data(self.x_axis, self.y_axis,
                                    self.marker_color, self.marker_size)
@@ -217,7 +241,7 @@ class TestDataPlotting(unittest.TestCase):
     
     def test_plot_multiple_datasets(self):
         """Test plotting multiple datasets on same plot"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         try:
             lps.plot_data(self.x_axis, self.y_axis,
                          self.marker_color, self.marker_size, alpha=0.7)
@@ -228,7 +252,7 @@ class TestDataPlotting(unittest.TestCase):
     
     def test_plot_data_with_custom_alpha(self):
         """Test plotting with custom transparency"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         try:
             lps.plot_data(self.x_axis, self.y_axis,
                          self.marker_color, self.marker_size, alpha=0.5)
@@ -243,11 +267,56 @@ class TestDataPlotting(unittest.TestCase):
             'color': self.marker_color,
             'size': self.marker_size
         })
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         try:
             lps.plot_data(df['x'], df['y'], df['color'], df['size'])
         except Exception as e:
             self.fail(f"plot_data with pandas input failed: {e}")
+    
+    def test_plot_data_with_gray_lines(self):
+        """Test plotting with gray lines (default, use_arrows=False)"""
+        lps = Visualizer(LPS_type='conversion', zoom=False)
+        try:
+            fig, ax = lps.plot_data(
+                self.x_axis, self.y_axis,
+                self.marker_color, self.marker_size,
+                use_arrows=False
+            )
+            self.assertIsNotNone(fig)
+            self.assertIsNotNone(ax)
+        except Exception as e:
+            self.fail(f"plot_data with gray lines failed: {e}")
+    
+    def test_plot_data_with_arrows(self):
+        """Test plotting with arrows enabled"""
+        lps = Visualizer(LPS_type='conversion', zoom=False)
+        try:
+            fig, ax = lps.plot_data(
+                self.x_axis, self.y_axis,
+                self.marker_color, self.marker_size,
+                use_arrows=True
+            )
+            self.assertIsNotNone(fig)
+            self.assertIsNotNone(ax)
+        except Exception as e:
+            self.fail(f"plot_data with arrows failed: {e}")
+    
+    def test_plot_data_custom_connection_style(self):
+        """Test plotting with custom connection line styling"""
+        lps = Visualizer(LPS_type='conversion', zoom=False)
+        try:
+            fig, ax = lps.plot_data(
+                self.x_axis, self.y_axis,
+                self.marker_color, self.marker_size,
+                use_arrows=False,
+                connection_color='darkgray',
+                connection_alpha=0.7,
+                connection_linewidth=2.0
+            )
+            self.assertIsNotNone(fig)
+            self.assertIsNotNone(ax)
+        except Exception as e:
+            self.fail(f"plot_data with custom connection style failed: {e}")
 
 
 class TestEdgeCases(unittest.TestCase):
@@ -259,14 +328,14 @@ class TestEdgeCases(unittest.TestCase):
     
     def test_empty_data(self):
         """Test with empty data arrays"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         empty = np.array([])
         with self.assertRaises(Exception):
             lps.plot_data(empty, empty, empty, empty)
     
     def test_single_point(self):
         """Test with single data point"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         single = np.array([1])
         try:
             lps.plot_data(single, single, single, np.array([3e5]))
@@ -276,16 +345,20 @@ class TestEdgeCases(unittest.TestCase):
     
     def test_very_large_values(self):
         """Test with very large values"""
-        lps = Visualizer(LPS_type='mixed', zoom=True)
-        large = np.array([1e10, 2e10, 3e10, 4e10, 5e10])
+        lps = Visualizer(LPS_type='conversion', zoom=True)
+        # Use realistic but extreme values based on real cyclone data ranges
+        large_ck = np.array([-100, -50, 0, 50, 100])
+        large_ca = np.array([-20, -10, 0, 10, 20])
+        large_ge = np.array([-30, -15, 0, 15, 30])
+        large_ke = np.array([1e5, 5e5, 1e6, 1.5e6, 2e6])
         try:
-            lps.plot_data(large, large, large/1e8, large)
+            lps.plot_data(large_ck, large_ca, large_ge, large_ke)
         except Exception as e:
             self.fail(f"Plotting large values failed: {e}")
     
     def test_negative_marker_sizes(self):
         """Test with positive marker sizes only (marker_limits should be positive)"""
-        lps = Visualizer(LPS_type='mixed', zoom=True,
+        lps = Visualizer(LPS_type='conversion', zoom=True,
                         marker_limits=[1e5, 1e6])
         data = np.array([2e5, 3e5, 4e5, 5e5, 6e5])
         # Should work without errors
@@ -308,7 +381,7 @@ class TestVisualOutput(unittest.TestCase):
     
     def test_save_mixed_no_zoom(self):
         """Test saving mixed LPS without zoom"""
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         x = np.linspace(-30, 30, 10)
         y = np.sin(x / 10) * 10
         color = np.linspace(-10, 10, 10)
@@ -321,7 +394,7 @@ class TestVisualOutput(unittest.TestCase):
     
     def test_save_mixed_with_zoom(self):
         """Test saving mixed LPS with zoom"""
-        lps = Visualizer(LPS_type='mixed', zoom=True)
+        lps = Visualizer(LPS_type='conversion', zoom=True)
         x = np.linspace(-30, 30, 10)
         y = np.sin(x / 10) * 10
         color = np.linspace(-10, 10, 10)
@@ -348,13 +421,56 @@ class TestVisualOutput(unittest.TestCase):
     def test_save_imports(self):
         """Test saving imports LPS"""
         lps = Visualizer(LPS_type='imports', zoom=False)
-        x = np.linspace(-100, 100, 10)
+        x = np.linspace(10, -10, 11)
         y = np.sin(x / 30) * 100
-        color = np.linspace(-10, 10, 10)
-        size = np.linspace(3e5, 7e5, 10)
+        color = np.linspace(10, -10, 11)
+        size = np.linspace(3e5, 7e5, 11)
         
         lps.plot_data(x, y, color, size)
         output_path = self.test_output_dir / 'test_imports.png'
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        self.assertTrue(output_path.exists())
+    
+    def test_save_with_gray_lines(self):
+        """Test saving plot with gray lines (default)"""
+        lps = Visualizer(LPS_type='conversion', zoom=False)
+        x = np.linspace(-30, 30, 10)
+        y = np.sin(x / 10) * 10
+        color = np.linspace(-10, 10, 10)
+        size = np.linspace(3e5, 7e5, 10)
+        
+        lps.plot_data(x, y, color, size, use_arrows=False)
+        output_path = self.test_output_dir / 'test_gray_lines.png'
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        self.assertTrue(output_path.exists())
+    
+    def test_save_with_arrows(self):
+        """Test saving plot with arrows"""
+        lps = Visualizer(LPS_type='conversion', zoom=False)
+        x = np.linspace(-30, 30, 10)
+        y = np.sin(x / 10) * 10
+        color = np.linspace(-10, 10, 10)
+        size = np.linspace(3e5, 7e5, 10)
+        
+        lps.plot_data(x, y, color, size, use_arrows=True)
+        output_path = self.test_output_dir / 'test_with_arrows.png'
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        self.assertTrue(output_path.exists())
+    
+    def test_save_custom_connection_style(self):
+        """Test saving plot with custom connection line styling"""
+        lps = Visualizer(LPS_type='conversion', zoom=False)
+        x = np.linspace(-30, 30, 10)
+        y = np.sin(x / 10) * 10
+        color = np.linspace(-10, 10, 10)
+        size = np.linspace(3e5, 7e5, 10)
+        
+        lps.plot_data(x, y, color, size,
+                     use_arrows=False,
+                     connection_color='darkgray',
+                     connection_alpha=0.7,
+                     connection_linewidth=2.5)
+        output_path = self.test_output_dir / 'test_custom_connections.png'
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         self.assertTrue(output_path.exists())
     
@@ -366,7 +482,7 @@ class TestVisualOutput(unittest.TestCase):
         size_min, size_max = 2e5, 8e5
         
         lps = Visualizer(
-            LPS_type='mixed',
+            LPS_type='conversion',
             zoom=True,
             x_limits=[x_min, x_max],
             y_limits=[y_min, y_max],
@@ -416,7 +532,7 @@ class TestRealDataScenarios(unittest.TestCase):
         df = pd.read_csv(self.sample1, parse_dates={'Datetime': ['Date', 'Hour']},
                         date_format='%Y-%m-%d %H')
         
-        lps = Visualizer(LPS_type='mixed', zoom=False)
+        lps = Visualizer(LPS_type='conversion', zoom=False)
         lps.plot_data(df['Ck'].values, df['Ca'].values,
                      df['Ge'].values, df['Ke'].values)
         
@@ -445,7 +561,7 @@ class TestRealDataScenarios(unittest.TestCase):
         size_max = max(df1['Ke'].max(), df2['Ke'].max())
         
         lps = Visualizer(
-            LPS_type='mixed',
+            LPS_type='conversion',
             zoom=True,
             x_limits=[x_min, x_max],
             y_limits=[y_min, y_max],

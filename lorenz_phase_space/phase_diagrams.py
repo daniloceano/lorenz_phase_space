@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2025/12/30 09:30:48 by daniloceano      ###   ########.fr        #
+#    Updated: 2026/01/02 16:39:54 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -28,7 +28,9 @@ Functions:
 
 import pandas as pd
 import matplotlib.colors as colors
+from matplotlib.colors import BoundaryNorm
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 import cmocean
 import numpy as np
 
@@ -75,7 +77,7 @@ class Visualizer:
     Lorenz Phase Space Visualizer
     
     Creates customizable Lorenz Phase Space diagrams to analyze atmospheric energy dynamics.
-    Supports three types of phase space diagrams: mixed (default), baroclinic, and imports.
+    Supports three types of phase space diagrams: conversion (default), baroclinic, and imports.
     
     The visualizer can operate in two modes:
     - Standard mode: Fixed axis limits suitable for comparing multiple systems
@@ -85,7 +87,7 @@ class Visualizer:
     ----------
     LPS_type : str, optional
         Type of Lorenz Phase Space diagram. Options are:
-        - 'mixed': Shows both baroclinic and barotropic instabilities (default)
+        - 'conversion': Shows both baroclinic and barotropic instabilities (default)
         - 'baroclinic': Focuses on baroclinic processes
         - 'imports': Analyzes eddy energy imports/exports
     zoom : bool, optional
@@ -124,14 +126,14 @@ class Visualizer:
     
     Examples
     --------
-    Create a basic mixed LPS without zoom:
+    Create a basic conversion LPS without zoom:
     
     >>> import pandas as pd
     >>> import matplotlib.pyplot as plt
     >>> from lorenz_phase_space.phase_diagrams import Visualizer
     >>> 
     >>> data = pd.read_csv('your_data.csv')
-    >>> lps = Visualizer(LPS_type='mixed', zoom=False)
+    >>> lps = Visualizer(LPS_type='conversion', zoom=False)
     >>> lps.plot_data(
     ...     x_axis=data['Ck'],
     ...     y_axis=data['Ca'],
@@ -143,7 +145,7 @@ class Visualizer:
     Create a zoomed LPS with custom limits:
     
     >>> lps = Visualizer(
-    ...     LPS_type='mixed',
+    ...     LPS_type='conversion',
     ...     zoom=True,
     ...     x_limits=[-50, 50],
     ...     y_limits=[-30, 30],
@@ -158,7 +160,7 @@ class Visualizer:
     The plotting functions are highly optimized for specific visual output.
     Modifications to plotting methods may significantly alter diagram appearance.
     """
-    def __init__(self, LPS_type='mixed', zoom=False, x_limits=None, y_limits=None, color_limits=None, marker_limits=None,
+    def __init__(self, LPS_type='conversion', zoom=False, x_limits=None, y_limits=None, color_limits=None, marker_limits=None,
                  **kwargs):
         
         # Set up figure
@@ -176,37 +178,26 @@ class Visualizer:
 
         # Set limits
         limits = self.set_limits(x_limits, y_limits)
-        color_limits = np.linspace(-15, 15, 100) if color_limits is None else color_limits
-        marker_size = np.linspace(2.5e5, 7e5, 100) if marker_limits is None else np.linspace(marker_limits[0], marker_limits[1], 100)
+        
+        # Configure marker sizes based on LPS type and zoom
+        # Color boundaries will be set dynamically in plot_data based on actual data
+        self.color_boundaries = None
+        self.norm = None
+        self.cmap = cmocean.cm.curl
+        
+        if self.LPS_type == 'conversion':
+            if not self.zoom:
+                marker_size = np.linspace(2e4, 1e6, 100)
+            else:
+                marker_size = np.linspace(2.5e5, 7e5, 100) if marker_limits is None else np.linspace(marker_limits[0], marker_limits[1], 100)
+        else:
+            marker_size = np.linspace(2.5e5, 7e5, 100) if marker_limits is None else np.linspace(marker_limits[0], marker_limits[1], 100)
 
         # Get labels
         labels = self.get_labels()
 
-        # Normalize marker colors based on whether zoom is enabled or not
-        if self.zoom:
-            self.plot_lines(limits, **kwargs)
-            # Get original upper and lower color limits
-            original_min_color, original_max_color = color_limits[0], color_limits[-1]
-            
-            # Adjust limits if necessary
-            if original_max_color < 0:
-                max_color = 1
-            else:
-                max_color = original_max_color
-            
-            if original_min_color > 0:
-                min_color = -1
-            else:
-                min_color = original_min_color
-            
-            # Ensure normalization is centered around 0 by adjusting min and max proportionally
-            max_abs_color = max(abs(min_color), abs(max_color))
-            self.norm = colors.TwoSlopeNorm(vmin=-max_abs_color, vcenter=0, vmax=max_abs_color)
-            extend = 'both'
-
-        else:
-            self.norm = colors.TwoSlopeNorm(vmin=-30, vcenter=0, vmax=30)
-            extend = 'neither'
+        # Draw reference lines (always, for both zoom and non-zoom modes)
+        self.plot_lines(limits, **kwargs)
 
         # Compute marker sizes and intervals
         _, intervals = self.calculate_marker_size(marker_size, self.zoom)
@@ -215,17 +206,12 @@ class Visualizer:
         # Add legend with dynamic intervals and sizes
         self.plot_legend(self.ax, intervals, msizes, labels['size_label'])
 
-        # Add colorbar
-        sm = plt.cm.ScalarMappable(cmap=cmocean.cm.curl, norm=self.norm)
-        sm.set_array([])
-        cax = self.ax.inset_axes([self.ax.get_position().x1 + 0.13, self.ax.get_position().y0 + 0.35, 0.02, self.ax.get_position().height / 1.5])
-        self.cbar = self.fig.colorbar(sm, extend=extend, cax=cax)
-        self.cbar.ax.set_ylabel(labels['color_label'], rotation=270, labelpad=25)  # Customize this
-        for t in self.cbar.ax.get_yticklabels():
-            t.set_fontsize(10)
+        # Colorbar will be created in plot_data based on actual data
+        self.cbar = None
+        self.labels = labels
 
-        # Add annotations
-        self.annotate_plot(self.ax, self.cbar)
+        # Add annotations (colorbar will be added later)
+        self.annotate_plot(self.ax, None)
         self.plot_gradient_lines(**kwargs) if not self.zoom else []
 
         plt.subplots_adjust(right=0.8)
@@ -241,9 +227,9 @@ class Visualizer:
         Parameters
         ----------
         x_axis : array-like
-            X-axis values (e.g., Ck for mixed LPS, Ce for baroclinic)
+            X-axis values (e.g., Ck for conversion LPS, Ce for baroclinic)
         y_axis : array-like
-            Y-axis values (e.g., Ca for mixed/baroclinic LPS)
+            Y-axis values (e.g., Ca for conversion/baroclinic LPS)
         marker_color : array-like
             Values determining marker colors (typically Ge - Generation of eddy potential energy)
         marker_size : array-like
@@ -252,6 +238,10 @@ class Visualizer:
             Additional plotting options:
             - alpha: Transparency of markers (default: 1)
             - cmap: Colormap for markers (default: cmocean.cm.curl)
+            - use_arrows: If True, use arrows; if False, use simple gray lines (default: False)
+            - connection_color: Color of connection lines when use_arrows=False (default: 'gray')
+            - connection_alpha: Alpha of connection lines when use_arrows=False (default: 0.5)
+            - connection_linewidth: Line width of connections when use_arrows=False (default: 1.5)
         
         Returns
         -------
@@ -270,7 +260,7 @@ class Visualizer:
         --------
         Plot a single trajectory:
         
-        >>> lps = Visualizer(LPS_type='mixed', zoom=False)
+        >>> lps = Visualizer(LPS_type='conversion', zoom=False)
         >>> lps.plot_data(
         ...     x_axis=data['Ck'],
         ...     y_axis=data['Ca'],
@@ -278,9 +268,19 @@ class Visualizer:
         ...     marker_size=data['Ke']
         ... )
         
+        Plot with gray lines instead of arrows:
+        
+        >>> lps.plot_data(
+        ...     x_axis=data['Ck'],
+        ...     y_axis=data['Ca'],
+        ...     marker_color=data['Ge'],
+        ...     marker_size=data['Ke'],
+        ...     use_arrows=False
+        ... )
+        
         Plot multiple trajectories with custom transparency:
         
-        >>> lps = Visualizer(LPS_type='mixed', zoom=True)
+        >>> lps = Visualizer(LPS_type='conversion', zoom=True)
         >>> lps.plot_data(data1['Ck'], data1['Ca'], data1['Ge'], data1['Ke'], alpha=0.7)
         >>> lps.plot_data(data2['Ck'], data2['Ca'], data2['Ge'], data2['Ke'], alpha=0.7)
         """
@@ -294,11 +294,67 @@ class Visualizer:
         marker_color = pd.Series(marker_color).reset_index(drop=True)
         marker_size = pd.Series(marker_size).reset_index(drop=True)
 
-        # arrows connecting dots
-        self.ax.quiver(x_axis[:-1].values, y_axis[:-1].values,
-                        (x_axis[1:].values - x_axis[:-1].values) * .9,
-                        (y_axis[1:].values - y_axis[:-1].values) * .9,
-                        angles='xy', scale_units='xy', scale=1, color='k')
+        # Update color normalization based on actual data (only on first call)
+        if self.norm is None:
+            # Get maximum absolute value from data to center at 0
+            max_abs_value = max(abs(marker_color.min()), abs(marker_color.max()))
+            # Round up to nearest integer for cleaner boundaries
+            max_abs_value = np.ceil(max_abs_value)
+            
+            # Create 10 discrete color boundaries centered at 0
+            self.color_boundaries = np.linspace(-max_abs_value, max_abs_value, 11)
+            self.norm = BoundaryNorm(self.color_boundaries, ncolors=256)
+            
+            # Create colorbar
+            sm = plt.cm.ScalarMappable(cmap=self.cmap, norm=self.norm)
+            sm.set_array([])
+            cax = self.ax.inset_axes([self.ax.get_position().x1 + 0.23, self.ax.get_position().y0 + 0.35, 0.02, self.ax.get_position().height / 1.5])
+            self.cbar = self.fig.colorbar(sm, extend='neither', cax=cax, spacing='uniform')
+            
+            # Set discrete ticks at boundaries
+            self.cbar.set_ticks(self.color_boundaries)
+            # Format tick labels - use integers when possible
+            tick_labels = [f'{int(tick)}' if tick == int(tick) else f'{tick:.1f}' for tick in self.color_boundaries]
+            self.cbar.set_ticklabels(tick_labels)
+            
+            self.cbar.ax.set_ylabel(self.labels['color_label'], rotation=270, labelpad=55)
+            for t in self.cbar.ax.get_yticklabels():
+                t.set_fontsize(10)
+
+        # Connection style options
+        use_arrows = kwargs.get('use_arrows', False)
+        connection_color = kwargs.get('connection_color', 'gray')
+        connection_alpha = kwargs.get('connection_alpha', 0.5)
+        connection_linewidth = kwargs.get('connection_linewidth', 1.5)
+
+        if use_arrows:
+            # Calculate distances between consecutive points
+            dx = x_axis[1:].values - x_axis[:-1].values
+            dy = y_axis[1:].values - y_axis[:-1].values
+            distances = np.sqrt(dx**2 + dy**2)
+            
+            # Calculate arrow scaling factor to prevent arrow from overshooting
+            # Use 0.7 as base, but reduce further for very short distances
+            scale_factors = np.minimum(0.7, distances / (distances.max() + 1e-10) * 0.7)
+            
+            # Plot arrows with adjusted scaling
+            for i in range(len(x_axis) - 1):
+                self.ax.annotate('',
+                               xy=(x_axis[i] + dx[i] * scale_factors[i],
+                                   y_axis[i] + dy[i] * scale_factors[i]),
+                               xytext=(x_axis[i], y_axis[i]),
+                               arrowprops=dict(arrowstyle='->', 
+                                             color='k',
+                                             lw=1.5,
+                                             shrinkA=0,
+                                             shrinkB=0))
+        else:
+            # Simple gray lines connecting points
+            self.ax.plot(x_axis, y_axis, 
+                        color=connection_color, 
+                        alpha=connection_alpha, 
+                        linewidth=connection_linewidth,
+                        zorder=100)
 
         # Compute marker sizes and intervals
         sizes, intervals = self.calculate_marker_size(marker_size, self.zoom)
@@ -353,7 +409,8 @@ class Visualizer:
         and rounded to two orders of magnitude below the minimum value for cleaner
         legend labels.
         
-        Default intervals (non-zoom): [3e5, 4e5, 5e5, 6e5]
+        Default intervals (non-zoom conversion): [2e4, 2.2e5, 4.2e5, 6.2e5, 8.2e5]
+        Default intervals (non-zoom others): [3e5, 4e5, 5e5, 6e5]
         Marker size options: [200, 400, 600, 800, 1000]
         
         Examples
@@ -383,8 +440,9 @@ class Visualizer:
             round_to = order_of_magnitude / 100
             intervals = [round(v, -int(np.log10(round_to))) for v in intervals]
         else:
-            # Default intervals
-            intervals = [3e5, 4e5, 5e5, 6e5]
+            # Default intervals - different for conversion LPS
+            # For conversion: range from 2e4 to 1e6, split into 5 bins
+            intervals = [2e4, 2.2e5, 4.2e5, 6.2e5, 8.2e5]
 
         msizes = [200, 400, 600, 800, 1000]
         sizes = pd.Series([msizes[next(i for i, v in enumerate(intervals) if val <= v)] if val <= intervals[-1] else msizes[-1] for val in term])
@@ -412,11 +470,14 @@ class Visualizer:
         Notes
         -----
         Default y-axis limits by LPS type:
-        - 'mixed': (-20, 20)
+        - 'conversion': (-3, 8)
         - 'baroclinic': (-20, 20)
-        - 'imports': (-200, 200)
+        - 'imports': (-40, 40)
         
-        Default x-axis limits: (-70, 70) for all types
+        Default x-axis limits: 
+        - 'conversion': (-50, 30)
+        - 'baroclinic': (-70, 70)
+        - 'imports': (-15, 25)
         
         Custom limits are only applied when zoom=True during initialization
         """ 
@@ -427,12 +488,17 @@ class Visualizer:
 
         else:   
             y_limits = {
-                'mixed': (-20, 20),
+                'conversion': (-3, 8),
                 'baroclinic': (-20, 20),
-                'imports': (-200, 200)
+                'imports': (-40, 40)
+            }
+            x_limits_dict = {
+                'conversion': (-50, 30),
+                'baroclinic': (-70, 70),
+                'imports': (-15, 25)
             }
             self.ax.set_ylim(*y_limits.get(self.LPS_type, (-20, 20)))
-            self.ax.set_xlim(-70, 70)
+            self.ax.set_xlim(*x_limits_dict.get(self.LPS_type, (-70, 70)))
 
         x_limits, y_limits = self.ax.get_xlim(), self.ax.get_ylim()
         
@@ -471,7 +537,7 @@ class Visualizer:
         - Zoom mode: Abbreviated labels (e.g., "Ck - $(W m^{-2})$")
         - Standard mode: Full descriptive labels
         
-        Physical interpretations for 'mixed' LPS type:
+        Physical interpretations for 'conversion' LPS type:
         - Upper-left: Barotropic and baroclinic instabilities
         - Upper-right: Baroclinic instability
         - Lower-left: Barotropic instability
@@ -479,23 +545,23 @@ class Visualizer:
         
         Examples
         --------
-        >>> lps = Visualizer(LPS_type='mixed')
+        >>> lps = Visualizer(LPS_type='conversion')
         >>> labels = lps.get_labels()
         >>> print(labels['upper_right'])
         'Baroclinic instability'
         """
         labels_dict = {}
 
-        if self.LPS_type == 'mixed':
-            labels_dict['y_upper'] = 'Eddy is gaining potential energy \n from the mean flow'
-            labels_dict['y_lower'] = 'Eddy is providing potential energy \n to the mean flow'
-            labels_dict['x_left'] = 'Eddy is gaining kinetic energy \n from the mean flow'
-            labels_dict['x_right'] = 'Eddy is providing kinetic energy \n to the mean flow'
-            labels_dict['col_lower'] = 'Subsidence decreases \n eddy potential energy'
-            labels_dict['col_upper'] = 'Latent heat release feeds \n eddy potential energy'
+        if self.LPS_type == 'conversion':
+            labels_dict['y_upper'] = 'Eddy is gaining potential energy from the mean flow'
+            labels_dict['y_lower'] = 'Eddy is providing potential\nenergy to the mean flow'
+            labels_dict['x_left'] = 'Eddy is gaining kinetic energy\nfrom the mean flow'
+            labels_dict['x_right'] = 'Eddy is providing kinetic energy\nto the mean flow'
+            labels_dict['col_lower'] = 'Subsidence decreases \neddy potential energy'
+            labels_dict['col_upper'] = 'Latent heat release feeds \neddy potential energy'
             labels_dict['lower_left'] = 'Barotropic instability'
             labels_dict['upper_left'] = 'Barotropic and baroclinic instabilities'
-            labels_dict['lower_right'] = 'Eddy is feeding the local atmospheric circulation'
+            labels_dict['lower_right'] = 'Eddy is feeding the local\natmospheric circulation'
             labels_dict['upper_right'] = 'Baroclinic instability'
 
             if self.zoom:
@@ -598,45 +664,75 @@ class Visualizer:
         label_fontsize = kwargs.get('label_fontsize', 14) if self.zoom else kwargs.get('label_fontsize', 10)
         
         labels = self.get_labels()
-            
-        # Centering text annotations on y-axis
+        
+        # Get actual axis limits for accurate positioning
+        x_lim = ax.get_xlim()
+        y_lim = ax.get_ylim()
+        
+        # Calculate quadrant centers
+        # Left quadrants: center x between x_min and 0
+        # Right quadrants: center x between 0 and x_max
+        # Upper quadrants: center y between 0 and y_max
+        # Lower quadrants: center y between y_min and 0
+        
+        x_left_center = x_lim[0] / 2
+        x_right_center = x_lim[1] / 2
+        y_lower_center = y_lim[0] / 2
+        y_upper_center = y_lim[1] / 2
+        
+        # Positions for y-axis annotations (left of y-axis)
         yticks, xticks = ax.get_yticks(), ax.get_xticks()
-        y_tick_0 = len(yticks) // 2
-        y_offset = 0.5 * (yticks[y_tick_0] - yticks[-1])  # Half the distance between two consecutive y-ticks
-        x_tick_pos = xticks[0] - ((xticks[1] - xticks[0])/12)
+        x_tick_pos = xticks[0] - ((xticks[1] - xticks[0])/2)
 
         if not self.zoom:
-            ax.text(x_tick_pos, yticks[0] - y_offset, labels['y_lower'], rotation=90, fontsize=annotation_fontsize,
+            # Y-axis labels (rotated, positioned at quadrant centers vertically)
+            ax.text(x_tick_pos, y_lower_center, labels['y_lower'], rotation=90, fontsize=annotation_fontsize,
                     horizontalalignment='center', c='#19616C', verticalalignment='center')
-            ax.text(x_tick_pos, yticks[-1] + y_offset, labels['y_upper'], rotation=90, fontsize=annotation_fontsize,
+            ax.text(x_tick_pos, y_upper_center, labels['y_upper'], rotation=90, fontsize=annotation_fontsize,
                     horizontalalignment='center', c='#CF6D66', verticalalignment='center')
             
-            ax.text(0.22,-0.07, labels['x_left'], fontsize=annotation_fontsize,
+            # X-axis labels (below x-axis, positioned at quadrant centers horizontally)
+            # Convert data coordinates to axes fraction
+            x_left_frac = (x_left_center - x_lim[0]) / (x_lim[1] - x_lim[0])
+            x_right_frac = (x_right_center - x_lim[0]) / (x_lim[1] - x_lim[0])
+            
+            ax.text(x_left_frac, -0.07, labels['x_left'], fontsize=annotation_fontsize,
                     horizontalalignment='center', c='#CF6D66', transform=ax.transAxes)
-            ax.text(0.75,-0.07,labels['x_right'], fontsize=annotation_fontsize,
+            ax.text(x_right_frac, -0.07, labels['x_right'], fontsize=annotation_fontsize,
                     horizontalalignment='center', c='#19616C', transform=ax.transAxes)
             
-            ax.text(1.13,0.49, labels['col_lower'], rotation=270, fontsize=annotation_fontsize, 
+            # Colorbar labels remain the same
+            ax.text(1.12, 0.49, labels['col_lower'], rotation=270, fontsize=annotation_fontsize, 
                     horizontalalignment='center', c='#19616C', transform=ax.transAxes)
-            ax.text(1.13,0.75, labels['col_upper'], rotation=270,fontsize=annotation_fontsize,
+            ax.text(1.12, 0.75, labels['col_upper'], rotation=270, fontsize=annotation_fontsize,
                     horizontalalignment='center', c='#CF6D66', transform=ax.transAxes)
             
-            ax.text(0.22,0.03, labels['lower_left'], fontsize=annotation_fontsize, horizontalalignment='center',
-                    c='#660066', verticalalignment='center', transform=ax.transAxes)
-            ax.text(0.22,0.97, labels['upper_left'], fontsize=annotation_fontsize,horizontalalignment='center',
-                    c='#800000', verticalalignment='center', transform=ax.transAxes)
+            # Quadrant labels - positioned in center of each quadrant, but near edges
+            # Calculate vertical positions as fractions
+            y_lower_frac = (y_lower_center - y_lim[0]) / (y_lim[1] - y_lim[0])
+            y_upper_frac = (y_upper_center - y_lim[0]) / (y_lim[1] - y_lim[0])
             
-            ax.text(0.75,0.03, labels['lower_right'], fontsize=annotation_fontsize,horizontalalignment='center',
-                    c='#000066', verticalalignment='center', transform=ax.transAxes)
-            ax.text(0.75,0.97,labels['upper_right'], fontsize=annotation_fontsize,horizontalalignment='center',
-                    c='#660066', verticalalignment='center', transform=ax.transAxes)
+            # Adjust vertical positions to be closer to top/bottom
+            y_near_bottom = y_lower_frac * 0.3  # Near bottom of lower quadrants
+            y_near_top = y_upper_frac * 0.9 + 0.4  # Near top of upper quadrants
+            
+            ax.text(x_left_frac, y_near_bottom, labels['lower_left'], fontsize=annotation_fontsize, 
+                    horizontalalignment='center', c='#660066', verticalalignment='center', transform=ax.transAxes)
+            ax.text(x_left_frac, y_near_top, labels['upper_left'], fontsize=annotation_fontsize,
+                    horizontalalignment='center', c='#800000', verticalalignment='center', transform=ax.transAxes)
+            
+            ax.text(x_right_frac, y_near_bottom, labels['lower_right'], fontsize=annotation_fontsize,
+                    horizontalalignment='center', c='#000066', verticalalignment='center', transform=ax.transAxes)
+            ax.text(x_right_frac, y_near_top, labels['upper_right'], fontsize=annotation_fontsize,
+                    horizontalalignment='center', c='#660066', verticalalignment='center', transform=ax.transAxes)
         
         # Write labels
         ax.set_xlabel(labels['x_label'], fontsize=label_fontsize,labelpad=labelpad,c='#383838')
         ax.set_ylabel(labels['y_label'], fontsize=label_fontsize,labelpad=labelpad,c='#383838')
-        cbar.ax.set_ylabel(labels['color_label'], rotation=270,fontsize=label_fontsize,
-                        verticalalignment='bottom', c='#383838',
-                        labelpad=labelpad, y=0.59)
+        if cbar is not None:
+            cbar.ax.set_ylabel(labels['color_label'], rotation=270,fontsize=label_fontsize,
+                            verticalalignment='bottom', c='#383838',
+                            labelpad=labelpad, y=0.59)
         
     @staticmethod
     def plot_legend(ax, intervals, msizes, title_label):
@@ -687,7 +783,7 @@ class Visualizer:
         """
         Draw reference lines on the plot.
         
-        Adds horizontal, vertical, and (for mixed LPS) diagonal reference lines
+        Adds horizontal, vertical, and (for conversion LPS) diagonal reference lines
         to delineate different regions of the phase space.
         
         Parameters
@@ -696,26 +792,45 @@ class Visualizer:
             Axis limits (x_min, x_max, y_min, y_max)
         **kwargs : dict
             Line styling options:
-            - line_alpha: Transparency (default: 0.2)
-            - lw: Line width (default: 20)
-            - c: Line color (default: '#383838')
+            - h_lw: Horizontal line width (default: 18 when not zoomed, 8 when zoomed)
+            - v_lw: Vertical line width (default: 18 when not zoomed, 8 when zoomed)
+            - diagonal_lw: Diagonal line width (default: 2)
+            - c: Line color (default: '#CCCCCC' - light gray)
         
         Notes
         -----
-        For 'mixed' LPS type, adds diagonal line from origin to corner,
+        Uses simple solid light gray lines that stay behind all plotted elements.
+        For 'conversion' LPS type, adds diagonal line from origin to corner,
         representing the boundary between different instability regimes.
-        This diagonal separates pure baroclinic from mixed instabilities.
+        The diagonal line is drawn behind vertical and horizontal lines.
+        No transparency is used to keep lines crisp and clear.
+        
+        Line rendering:
+        - Horizontal line: axhline with configurable linewidth
+        - Vertical line: axvline with configurable linewidth
+        - Diagonal line: dotted line with customizable linewidth (default: 2)
         """
-        # Configure properties from kwargs        
-        alpha = kwargs.get('line_alpha', 0.2)
-        linewidth = kwargs.get('lw', 20)
-        color = kwargs.get('c', '#383838')
+        # Configure properties from kwargs
+        diagonal_lw = kwargs.get('diagonal_lw', 2)  # Customizable diagonal linewidth
+        color = kwargs.get('c', '#CCCCCC')  # Light gray
+        
+        # Linewidth for horizontal and vertical lines (different defaults for zoom/non-zoom)
+        if not self.zoom:
+            default_h_lw = 18
+            default_v_lw = 18
+        else:
+            default_h_lw = 8
+            default_v_lw = 8
+        
+        h_linewidth = kwargs.get('h_lw', default_h_lw)
+        v_linewidth = kwargs.get('v_lw', default_v_lw)
+        
+        # Get axis limits
+        x_lim = self.ax.get_xlim()
+        y_lim = self.ax.get_ylim()
 
-        self.ax.axhline(y=0,linewidth=linewidth, c=color, alpha=alpha,zorder=1)
-        self.ax.axvline(x=0,linewidth=linewidth, c=color, alpha=alpha,zorder=1)
-
-        # Diagonal lines for mixed LPS
-        if self.LPS_type == 'mixed':
+        # Diagonal line first (behind everything) for conversion LPS
+        if self.LPS_type == 'conversion':
             # Get the end points of the plot
             end_point_x = limits[0]
             end_point_y = - end_point_x
@@ -724,65 +839,52 @@ class Visualizer:
             x_points = np.linspace(0, end_point_x, 100)
             y_points = np.linspace(0, end_point_y, 100)
 
-            self.ax.plot(x_points, y_points, linewidth=linewidth, c=color, alpha=alpha, zorder=2) 
+            # Use dotted line for diagonal
+            self.ax.plot(x_points, y_points, linewidth=diagonal_lw, c=color, 
+                        linestyle=':', zorder=0.5)
+
+        # Use linewidth for horizontal and vertical lines (all LPS types)
+        self.ax.axhline(y=0, linewidth=h_linewidth, c=color, zorder=1)
+        self.ax.axvline(x=0, linewidth=v_linewidth, c=color, zorder=1)
+        
+        # FUTURE FEATURE: Fill between for gray zones (kept for potential future use)
+        # Uncomment the code below to use filled regions instead of lines
+        # if self.LPS_type == 'conversion':
+        #     # Horizontal fill: Ca from -1 to 1
+        #     self.ax.fill_between(
+        #         [x_lim[0], x_lim[1]], -1, 1, 
+        #         color=color, alpha=1, zorder=1, linewidth=0
+        #     )
+        #     
+        #     # Vertical fill: Ck from -5 to 5
+        #     self.ax.fill_betweenx(
+        #         [y_lim[0], y_lim[1]], -5, 5,
+        #         color=color, alpha=1, zorder=1, linewidth=0
+        #     ) 
 
                 
     def plot_gradient_lines(self, **kwargs):
         """
-        Draw gradient lines around reference axes (standard mode only).
+        Draw reference lines (standard mode only).
         
-        Creates a series of parallel lines with increasing opacity approaching
-        the main reference axes, providing visual guides for interpreting
-        values near the axes.
+        This method is kept for backward compatibility but now simply ensures
+        the reference lines are drawn. The actual line drawing is handled by
+        plot_lines() method which is called during initialization.
         
         Parameters
         ----------
         **kwargs : dict
-            Line styling options:
-            - lw: Line width (default: 0.5)
-            - c: Line color (default: '#383838')
+            Line styling options (passed through but not used)
         
         Notes
         -----
         - Only called when zoom=False (standard mode)
-        - Creates 20 parallel lines with alpha values from 0 to 0.6
-        - For 'mixed' LPS type, includes diagonal gradient lines
-        - Lines are positioned based on axis tick spacing
-        - Provides subtle visual guidance without cluttering the plot
+        - Simplified to avoid complex gradient rendering
+        - Reference lines are now simple solid light gray lines
         """
-        # Configure properties from kwargs
-        LPS_type = self.LPS_type
-        linewidth = kwargs.get('lw', 0.5)
-        color = kwargs.get('c', '#383838')
-        num_lines = 20
-
-        # Get ticks
-        x_ticks = self.ax.get_xticks()
-        y_ticks = self.ax.get_yticks()
-
-        # Get offsets
-        x_previous0 = x_ticks[int((len(x_ticks))/2)-1] * 0.17
-        y_previous0 = y_ticks[int((len(y_ticks))/2)-1] * 0.17
-        x_offsets = np.linspace(x_previous0, 0, num_lines)
-        y_offsets = np.linspace(y_previous0, 0, num_lines)
-
-        alpha_values = np.linspace(0, 0.6, num_lines)
-
-        for i, alpha in enumerate(alpha_values):
-            self.ax.axhline(y=0 + y_offsets[i], linewidth=linewidth, alpha=alpha, c=color)
-            self.ax.axhline(y=0 - y_offsets[i], linewidth=linewidth, alpha=alpha, c=color)
-            self.ax.axvline(x=0 + x_offsets[i], linewidth=linewidth, alpha=alpha, c=color)
-            self.ax.axvline(x=0 - x_offsets[i], linewidth=linewidth, alpha=alpha, c=color)
-
-        # Diagonal line
-        if LPS_type == 'mixed':
-            y_ticks = -x_ticks
-            for i, alpha in enumerate(alpha_values):
-                x, y = x_offsets[i], y_offsets[i]
-                self.ax.plot([x, -x_ticks[-1] + x], [y, -y_ticks[-1] + y], linewidth=linewidth,
-                             alpha=alpha, c=color)
-                self.ax.plot([-x, -x_ticks[-1] - x], [-y, -y_ticks[-1] - y], linewidth=linewidth,
-                             alpha=alpha, c=color)
+        # This method is now a placeholder for backward compatibility
+        # The actual reference lines are drawn by plot_lines() during init
+        pass
         
 if __name__ == '__main__':
     import random
@@ -794,7 +896,7 @@ if __name__ == '__main__':
     df_2 = pd.read_csv(sample_file_2, parse_dates={'Datetime': ['Date', 'Hour']},
                        date_format='%Y-%m-%d %H')
 
-    # Data for mixed LPS
+    # Data for conversion LPS
     x_axis_1 = df_1['Ck'].values
     y_axis_1 = df_1['Ca'].values
     marker_color_1 = df_1['Ge'].values
@@ -818,8 +920,8 @@ if __name__ == '__main__':
     marker_size_4 = df_2['Ke'].values
 
     # Test base plot
-    lps = Visualizer(LPS_type='mixed', zoom=False)
-    fname = 'samples/lps_example_mixed'
+    lps = Visualizer(LPS_type='conversion', zoom=False)
+    fname = 'samples/lps_example_conversion'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
@@ -834,29 +936,29 @@ if __name__ == '__main__':
     print(f"Saved {fname}.png")
 
     # Test base plot zoom 
-    lps = Visualizer(LPS_type='mixed', zoom=True)
+    lps = Visualizer(LPS_type='conversion', zoom=True)
     fname = 'samples/lps_example_zoom'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test without zoom
-    lps = Visualizer(LPS_type='mixed', zoom=False)
+    lps = Visualizer(LPS_type='conversion', zoom=False)
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
-    fname = 'samples/sample_1_LPS_mixed'
+    fname = 'samples/sample_1_LPS_conversion'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test with zoom
-    lps = Visualizer(LPS_type='mixed', zoom=True)
+    lps = Visualizer(LPS_type='conversion', zoom=True)
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
-    fname = 'samples/sample_1_LPS_mixed_zoom'
+    fname = 'samples/sample_1_LPS_conversion_zoom'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
-    # Test with sample 2 - mixed
-    lps = Visualizer(LPS_type='mixed', zoom=False)
+    # Test with sample 2 - conversion
+    lps = Visualizer(LPS_type='conversion', zoom=False)
     lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
-    fname = 'samples/sample_2_mixed'
+    fname = 'samples/sample_2_conversion'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
@@ -882,18 +984,18 @@ if __name__ == '__main__':
     print(f"Saved {fname}.png")
 
     # Test with multiple plots - with zoom
-    lps = Visualizer(LPS_type='mixed', zoom=True)
+    lps = Visualizer(LPS_type='conversion', zoom=True)
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
-    fname = 'samples/sample_1_LPS_mixed_zoom_multiple'
+    fname = 'samples/sample_1_LPS_conversion_zoom_multiple'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
     # Test with multiple plots - without zoom
-    lps = Visualizer(LPS_type='mixed', zoom=False)
+    lps = Visualizer(LPS_type='conversion', zoom=False)
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
-    fname = 'samples/sample_1_LPS_mixed_multiple'
+    fname = 'samples/sample_1_LPS_conversion_multiple'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 
@@ -908,7 +1010,7 @@ if __name__ == '__main__':
     size_max = np.max([*marker_size_1, *marker_size_2])
 
     lps = Visualizer(
-        LPS_type='mixed',
+        LPS_type='conversion',
         zoom=True,
         x_limits=[x_min, x_max],
         y_limits=[y_min, y_max],
@@ -918,7 +1020,7 @@ if __name__ == '__main__':
     
     lps.plot_data(x_axis_1, y_axis_1, marker_color_1, marker_size_1)
     lps.plot_data(x_axis_2, y_axis_2, marker_color_2, marker_size_2)
-    fname = 'samples/sample_1_LPS_mixed_zoom_multiple_dynamic'
+    fname = 'samples/sample_1_LPS_conversion_zoom_multiple_dynamic'
     plt.savefig(f"{fname}.png", dpi=300)
     print(f"Saved {fname}.png")
 

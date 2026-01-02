@@ -16,7 +16,7 @@ The LPS complements the Cyclone Phase Space (CPS) developed by Hart (2003). Whil
 
 ### Key Features
 
-- **Mixed Mode**: Offers insights into both baroclinic and barotropic instabilities, which are fundamental in understanding large-scale atmospheric dynamics. 
+- **Conversion Mode**: Offers insights into both baroclinic and barotropic instabilities, which are fundamental in understanding large-scale atmospheric dynamics. 
 This mode is particularly useful for comprehensively analyzing scenarios where both instabilities are at play.
 
 - **Baroclinic Mode**: Focuses on the baroclinic processes, highlighting the role of temperature gradients and their impact on atmospheric energy transformations.
@@ -44,7 +44,7 @@ By utilizing the LPS tool, researchers and meteorologists can delve into the com
 ## Features
 
 - Visualization of data in Lorenz Phase Space
-- Support for different types of Lorenz Phase Spaces: mixed, baroclinic, and imports
+- Support for different types of Lorenz Phase Spaces: conversion, baroclinic, and imports
 - Dynamic adjustment of visualization parameters based on data scale
 - Customizable plotting options for detailed analysis
 - Support for multiple trajectories on a single plot
@@ -88,7 +88,7 @@ import matplotlib.pyplot as plt
 data = pd.read_csv('your_data.csv')
 
 # Create LPS visualizer
-lps = Visualizer(LPS_type='mixed', zoom=False)
+lps = Visualizer(LPS_type='conversion', zoom=False)
 
 # Plot your data
 lps.plot_data(
@@ -106,14 +106,16 @@ plt.savefig('lps_diagram.png', dpi=300, bbox_inches='tight')
 
 ```python
 # Enable zoom for dynamic axis limits
-lps = Visualizer(LPS_type='mixed', zoom=True)
+lps = Visualizer(LPS_type='conversion', zoom=True)
 
-# Plot data
+# Plot data with custom styling
 lps.plot_data(
     x_axis=data['Ck'],
     y_axis=data['Ca'],
     marker_color=data['Ge'],
-    marker_size=data['Ke']
+    marker_size=data['Ke'],
+    use_arrows=False,      # Gray lines (default)
+    connection_alpha=0.6   # Adjust transparency
 )
 
 plt.savefig('lps_zoomed.png', dpi=300, bbox_inches='tight')
@@ -139,7 +141,7 @@ data1 = pd.read_csv('cyclone1.csv')
 data2 = pd.read_csv('cyclone2.csv')
 
 # Create visualizer
-lps = Visualizer(LPS_type='mixed', zoom=True)
+lps = Visualizer(LPS_type='conversion', zoom=True)
 
 # Plot first cyclone
 lps.plot_data(
@@ -147,7 +149,8 @@ lps.plot_data(
     y_axis=data1['Ca'],
     marker_color=data1['Ge'],
     marker_size=data1['Ke'],
-    alpha=0.7  # Add transparency
+    alpha=0.7,  # Add transparency
+    use_arrows=False  # Use simple lines for cleaner comparison
 )
 
 # Plot second cyclone
@@ -156,7 +159,8 @@ lps.plot_data(
     y_axis=data2['Ca'],
     marker_color=data2['Ge'],
     marker_size=data2['Ke'],
-    alpha=0.7
+    alpha=0.7,
+    use_arrows=False
 )
 
 plt.savefig('lps_comparison.png', dpi=300, bbox_inches='tight')
@@ -181,7 +185,7 @@ size_max = max(data1['Ke'].max(), data2['Ke'].max())
 
 # Create LPS with custom limits
 lps = Visualizer(
-    LPS_type='mixed',
+    LPS_type='conversion',
     zoom=True,
     x_limits=[x_min, x_max],
     y_limits=[y_min, y_max],
@@ -272,7 +276,11 @@ Your input data should contain the following variables (units in W m⁻² for co
 - **'A' Marker**: Start of the cyclone lifecycle
 - **'Z' Marker**: End of the cyclone lifecycle
 - **Thick Outline**: Point of maximum intensity (highest Ke)
-- **Arrows**: Show temporal evolution of the system
+- **Connection Lines**: 
+  - Default: Gray lines connecting consecutive points
+  - Optional: Arrows showing temporal evolution (use `use_arrows=True`)
+  - Customizable: Color, transparency, and width
+- **Gradient Lines**: Smooth alpha fade around reference axes (non-zoom mode only)
 
 ## Testing
 
@@ -313,7 +321,7 @@ The `Visualizer` class accepts various customization parameters:
 
 ```python
 lps = Visualizer(
-    LPS_type='mixed',        # 'mixed', 'baroclinic', or 'imports'
+    LPS_type='conversion',        # 'conversion', 'baroclinic', or 'imports'
     zoom=False,              # Enable dynamic limits
     x_limits=None,           # Custom x-axis limits
     y_limits=None,           # Custom y-axis limits
@@ -352,7 +360,7 @@ df = pd.read_csv('samples/sample_results_1.csv',
                  date_format='%Y-%m-%d %H')
 
 # Create and plot
-lps = Visualizer(LPS_type='mixed', zoom=False)
+lps = Visualizer(LPS_type='conversion', zoom=False)
 lps.plot_data(df['Ck'].values, df['Ca'].values,
              df['Ge'].values, df['Ke'].values)
 
