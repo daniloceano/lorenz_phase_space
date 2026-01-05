@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/29 16:13:35 by daniloceano       #+#    #+#              #
-#    Updated: 2026/01/02 16:39:54 by daniloceano      ###   ########.fr        #
+#    Updated: 2026/01/05 15:11:15 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -442,7 +442,7 @@ class Visualizer:
         else:
             # Default intervals - different for conversion LPS
             # For conversion: range from 2e4 to 1e6, split into 5 bins
-            intervals = [2e4, 2.2e5, 4.2e5, 6.2e5, 8.2e5]
+            intervals = [2e5, 4e5, 6e5, 8e5, 1e6]
 
         msizes = [200, 400, 600, 800, 1000]
         sizes = pd.Series([msizes[next(i for i, v in enumerate(intervals) if val <= v)] if val <= intervals[-1] else msizes[-1] for val in term])

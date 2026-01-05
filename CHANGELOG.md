@@ -53,6 +53,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Notes
 - Version bump to `1.4.0` includes visualization and API improvements; see updated files for details.
 
+## [1.4.1] - 2026-01-05
+
+### Changed
+- Adjusted default marker size intervals in `Visualizer.calculate_marker_size` (intervals revised to improve legend readability and marker scaling).
+
+### Fixed
+- Updated CI and packaging metadata to reference the new package version `1.4.1`.
+
+### Notes
+- Patch release to apply visualization sizing change and prepare package for publishing.
+
 ## [1.2.4] - 2024-07-03
 
 ### Bug Fixes
